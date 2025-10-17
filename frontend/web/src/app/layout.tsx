@@ -1,9 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Kufam } from "next/font/google";
 import "./globals.css";
-// comment
+
+/**
+ * @Hyckael
+ * @marlenegohi
+ * @Jojo-225
+ * J'ai ajouté la police Kufam qui est la police principale de la maque
+ * @this
+ */
 const geistSans = Geist({
   variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const kufamSans = Kufam({
+  variable: "--font-kufam-sans",
   subsets: ["latin"],
 });
 
@@ -25,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${kufamSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
       </body>

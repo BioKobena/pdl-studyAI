@@ -30,7 +30,7 @@ export default function LandingPage() {
             Connexion
           </Button>
           <Button
-            onClick={() => router.push('/authentication/login')}
+            onClick={() => router.push('/authentication/register')}
             className="bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white px-12 py-6 rounded-full min-w-[200px] font-(family-name:--font-kufam-sans)"
           >
             Inscription

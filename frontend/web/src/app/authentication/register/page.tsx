@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/component/ui/button';
 import { Input } from '@/component/ui/input';
 import { Label } from '@/component/ui/label';
-import { Mail, Eye } from 'lucide-react';
+import { Mail, Eye, User } from 'lucide-react';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -16,13 +16,28 @@ export default function LoginPage() {
 
     return (
         <div>
-            <h2 className="text-[#3FA9D9] text-2xl font-semibold mb-6">CONNEXION</h2>
+            <h2 className="text-[#3FA9D9] text-2xl font-semibold mb-6">INSCRIPTION</h2>
 
             <p className="text-gray-600 mb-8">
-                Heureux de vous revoir, entrez vos identifiants pour vous connecter
-            </p>
+                Bienvenue sur studyAI, veuillez remplir vos informations :         
+           </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+                 {/* Nom&Prenoms */}
+                <div>
+                    <Label htmlFor="nom-prenoms" className="text-[#3FA9D9] mb-2 block">
+                        Nom & Prénoms
+                    </Label>
+                    <div className="relative">
+                        <Input
+                            id="nompre"
+                            type="input"
+                            placeholder="Gaspard Legrand"
+                            className="pr-10 bg-white border-gray-300"
+                        />
+                        <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    </div>
+                </div>
                 {/* Email */}
                 <div>
                     <Label htmlFor="email" className="text-[#3FA9D9] mb-2 block">
@@ -54,28 +69,37 @@ export default function LoginPage() {
                         <Eye className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     </div>
                 </div>
-
-                {/* Forgot password */}
-                <div className="text-right">
-                    <a href="#" className="text-[#FF9966] text-sm hover:underline">
-                        Mot de passe oublié ?
-                    </a>
+                {/* Confirmation Password */}
+                <div>
+                    <Label htmlFor="confpassword" className="text-[#3FA9D9] mb-2 block">
+                        Confirmer le Mot de passe
+                    </Label>
+                    <div className="relative">
+                        <Input
+                            id="password"
+                            type="password"
+                            placeholder="••••••••••••••••••••"
+                            className="pr-10 bg-white border-gray-300"
+                        />
+                        <Eye className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    </div>
                 </div>
+
 
                 {/* Submit button */}
                 <Button
                     type="submit"
                     className="w-full bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white"
                 >
-                    Se connecter
+                    S'inscrire
                 </Button>
             </form>
 
             {/* Sign up link */}
             <p className="text-center mt-8 text-gray-700">
-                Vous n'avez pas de compte ?{' '}
-                <a href="/authentication/register" className="text-[#3FA9D9] hover:underline">
-                    S'inscrire
+                Vous avez un compte ?{' '}
+                <a href="/authentication/login" className="text-[#3FA9D9] hover:underline">
+                    Se connecter
                 </a>
             </p>
         </div>

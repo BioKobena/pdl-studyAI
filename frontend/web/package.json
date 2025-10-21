@@ -15,7 +15,10 @@
     "@react-three/fiber": "^9.4.0",
     "class-variance-authority": "^0.7.1",
     "framer-motion": "^12.23.24",
+<<<<<<< HEAD
     "lottie-react": "^2.4.1",
+=======
+>>>>>>> bbb2133e48bc0a31aa155dbe8a934ecb9b9df615
     "lucide-react": "^0.546.0",
     "next": "15.5.5",
     "react": "19.1.0",

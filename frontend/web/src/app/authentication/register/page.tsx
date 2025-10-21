@@ -33,7 +33,7 @@ export default function LoginPage() {
                             id="nompre"
                             type="input"
                             placeholder="Gaspard Legrand"
-                            className="pr-10 bg-white border-gray-300"
+                            className="pr-10 bg-white text-gray-600 border-gray-300"
                         />
                         <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     </div>
@@ -48,7 +48,7 @@ export default function LoginPage() {
                             id="email"
                             type="email"
                             placeholder="groupepedistic@gmail.com"
-                            className="pr-10 bg-white border-gray-300"
+                            className="pr-10 bg-white text-gray-600 border-gray-300"
                         />
                         <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     </div>
@@ -64,7 +64,7 @@ export default function LoginPage() {
                             id="password"
                             type="password"
                             placeholder="••••••••••••••••••••"
-                            className="pr-10 bg-white border-gray-300"
+                            className="pr-10 bg-white text-gray-600 border-gray-300"
                         />
                         <Eye className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     </div>
@@ -79,7 +79,7 @@ export default function LoginPage() {
                             id="password"
                             type="password"
                             placeholder="••••••••••••••••••••"
-                            className="pr-10 bg-white border-gray-300"
+                            className="pr-10 bg-white text-gray-600 border-gray-300"
                         />
                         <Eye className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     </div>
@@ -91,7 +91,7 @@ export default function LoginPage() {
                     type="submit"
                     className="w-full bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white"
                 >
-                    S'inscrire
+                    S&apos;inscrire
                 </Button>
             </form>
 

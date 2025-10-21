@@ -1,0 +1,90 @@
+# version: '3.8'
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: studyai-mongo
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: studyai
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+  app:
+    build: .
+    container_name: studyai-backend
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/studyai
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    restart: on-failure
+
+volumes:
+  mongo-data:
+
+
+# version: "3.8"
+
+# services:
+#   app:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     env_file: .env
+#     environment:
+#       - NODE_ENV=development
+#       - DB_HOST=db
+#       - REDIS_HOST=redis
+#     ports:
+#       - "3000:3000"     # adjust if your app listens on another port
+#     volumes:
+#       - ./:/usr/src/app
+#       - /usr/src/app/node_modules
+#     depends_on:
+#       db:
+#         condition: service_healthy
+#       redis:
+#         condition: service_started
+#     restart: unless-stopped
+#     networks:
+#       - backend
+#     # default command for a typical Node backend; change to your start command if different
+#     command: sh -c "npm install && npm run dev"
+
+#   db:
+#     image: postgres:14
+#     env_file: .env
+#     environment:
+#       - POSTGRES_USER
+#       - POSTGRES_PASSWORD
+#       - POSTGRES_DB
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       - db_data:/var/lib/postgresql/data
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#     restart: unless-stopped
+#     networks:
+#       - backend
+
+#   redis:
+#     image: redis:7
+#     ports:
+#       - "6379:6379"
+#     restart: unless-stopped
+#     networks:
+#       - backend
+
+# volumes:
+#   db_data:
+
+# networks:
+#   backend:
+#     driver: bridge

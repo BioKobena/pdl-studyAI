@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-
+import { Animation } from "@/component/ui/animationRobotAi";
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex min-h-screen">
@@ -16,15 +16,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                         height={60}
                         className="object-contain"
                     />
-
-                    {/* Image du robot */}
-                    <Image
-                        src="/robot.png"
-                        alt="Robot StudyAI"
-                        width={500}
-                        height={500}
-                        className="object-contain"
-                    />
+                    <Animation/>
                 </div>
             </div>
 

@@ -1,104 +1,89 @@
 'use client';
 
-import { Upload, FileText, File } from 'lucide-react';
-import { Button } from '@/component/ui/button';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import React from "react";
+import FileUpload, {
+    DropZone,
+    FileError,
+    FileList,
+    FileInfo,
+    FileProgress,
+} from "@/component/ui/file-uploader";
+import { FileText, MessageCircle, HelpCircle } from "lucide-react";
+import { HoverEffect } from "@/component/ui/hover-effect";
+import MyIcon from "@/component/ui/icon";
 
-export default function UploadPage() {
-    const router = useRouter();
+export default function UploadFiles() {
+    const [uploadFiles, setUploadFiles] = useState<FileInfo[]>([]);
 
-    const recentFiles = [
-        { name: 'cours_base_de_donnees.pdf', size: '18 Mo', type: 'pdf', icon: 'pdf' },
-        { name: 'cours_base_de_donnees.docx', size: '18 Mo', type: 'docx', icon: 'docx' },
-        { name: 'cours_base_de_donnees.txt', size: '18 Mo', type: 'txt', icon: 'txt' },
-        { name: 'cours_base_de_donnees.pdf', size: '18 Mo', type: 'pdf', icon: 'pdf' },
-        { name: 'cours_base_de_donnees.pdf', size: '18 Mo', type: 'pdf', icon: 'pdf' },
-        { name: 'cours_modelisation_ensemble.txt', size: '18 Mo', type: 'txt', icon: 'txt' }
+    const onFileSelectChange = (files: FileInfo[]) => {
+        setUploadFiles(files);
+    };
+
+    const onRemove = (fileId: string) => {
+        setUploadFiles(uploadFiles.filter((file) => file.id !== fileId));
+    };
+
+    const items = [
+        {
+            title: "Résumé",
+            description: "Générer un résumé pour mieux comprendre ton document.",
+            link: "/resume",
+            icon: <MyIcon/>,
+        },
+        {
+            title: "Chat",
+            description: "Discuter avec ton document et poser des questions.",
+            link: "/chat",
+            icon: <MyIcon/>,
+        },
+        {
+            title: "Quiz",
+            description: "Créer des quiz interactifs pour tester ta compréhension.",
+            link: "/quiz",
+            icon: <MyIcon/>,
+        },
     ];
 
-    const getFileIcon = (type: string) => {
-        const iconClass = "w-5 h-5";
-        switch(type) {
-            case 'pdf':
-                return <FileText className={`${iconClass} text-red-500`} />;
-            case 'docx':
-                return <FileText className={`${iconClass} text-blue-500`} />;
-            case 'txt':
-                return <File className={`${iconClass} text-gray-500`} />;
-            default:
-                return <File className={iconClass} />;
-        }
-    };
-
-    const getFileColor = (type: string) => {
-        switch(type) {
-            case 'pdf':
-                return 'bg-red-100';
-            case 'docx':
-                return 'bg-blue-100';
-            case 'txt':
-                return 'bg-gray-100';
-            default:
-                return 'bg-gray-100';
-        }
-    };
-
     return (
-        <div className="min-h-screen bg-[#F5F5F5]">
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+            {/* Title */}
+            <div className="text-center mb-8">
+                <h1 className="text-red-700 text-3xl font-bold">Dépose ton pdf</h1>
+                <p className="text-orange-500 text-md">Révise plus vite</p>
+            </div>
 
-            {/* Main content */}
-            <main className="container mx-auto px-8 py-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    {/* Left side - Upload area */}
-                    <div>
-                        <div className="bg-white rounded-lg p-8 flex items-center justify-center min-h-[400px]">
-                            <div className="text-center">
-                                {/* Upload icon */}
-                                <div className="mb-6">
-                                    <div className="w-32 h-32 mx-auto border-4 border-dashed border-[#3FA9D9] rounded-lg flex items-center justify-center">
-                                        <Upload className="w-16 h-16 text-[#3FA9D9]" strokeWidth={1.5} />
-                                    </div>
-                                </div>
-
-                                {/* Upload button */}
-                                <Button className="bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white mb-4">
-                                    Uploader son pdf
-                                </Button>
-
-                                {/* Accepted formats */}
-                                <p className="text-gray-500 text-sm">
-                                    Fichier accepté : .pdf, .txt, .docs, .docx
-                                </p>
-                            </div>
+            {/* Zone d’upload */}
+            <main className="flex-1 container mx-auto px-4">
+                <div className="w-full flex justify-center">
+                    <div className="space-y-2 mb-6"></div>
+                    <FileUpload
+                        files={uploadFiles}
+                        onFileSelectChange={onFileSelectChange}
+                        multiple={true}
+                        accept=".pdf,.docx,.doc,.png,.jpg,.jpeg"
+                        maxSize={10}
+                        maxCount={3}
+                        className="mt-2"
+                        disabled={false}
+                    >
+                        <div className="space-y-4">
+                            <DropZone prompt="Clique ou dépose ton fichier ici" />
+                            <FileError />
+                            <FileProgress />
+                            <FileList
+                                files={uploadFiles}
+                                onClear={() => setUploadFiles([])}
+                                onRemove={onRemove}
+                                canResume={true}
+                            />
                         </div>
-                    </div>
+                    </FileUpload>
+                </div>
 
-                    {/* Right side - Recent files */}
-                    <div>
-                        <h3 className="mb-6 text-gray-700">Fichier récemment uploadé :</h3>
-
-                        <div className="space-y-3">
-                            {recentFiles.map((file, index) => (
-                                <div
-                                    key={index}
-                                    className="bg-[#A8D5E2] hover:bg-[#95C8D8] transition-colors rounded-lg p-4 flex items-center justify-between cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        {/* File icon */}
-                                        <div className={`w-10 h-10 ${getFileColor(file.type)} rounded flex items-center justify-center`}>
-                                            {getFileIcon(file.type)}
-                                        </div>
-
-                                        {/* File name */}
-                                        <span className="text-white">{file.name}</span>
-                                    </div>
-
-                                    {/* File size */}
-                                    <span className="text-white">{file.size}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                {/* 🟦 Infos Cards */}
+                <div className="mt-12">
+                    <HoverEffect items={items} />
                 </div>
             </main>
         </div>

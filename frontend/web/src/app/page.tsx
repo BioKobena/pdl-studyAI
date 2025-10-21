@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { Animation } from "@/component/ui/animationRobotAi";
 import { Button } from '@/component/ui/button';
 import { useRouter } from 'next/navigation';
 
@@ -39,14 +39,9 @@ export default function LandingPage() {
         <div className="flex justify-center mt-16">
           <div className="relative">
             <div className="w-96 h-80 bg-gradient-to-r from-[#E3F2FD] to-[#BBDEFB] rounded-full absolute top-0 left-1/2 -translate-x-1/2 opacity-60 blur-2xl"></div>
-
-            <Image
-              src="/robotHomePage.png"
-              alt="Robot StudyAI"
-              width={300}
-              height={400}
-              className="relative z-10 object-contain"
-            />
+            <div className="w-full h-full">
+              <Animation />
+            </div>
           </div>
         </div>
       </div>

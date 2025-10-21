@@ -91,7 +91,7 @@ export default function LoginPage() {
                     type="submit"
                     className="w-full bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white"
                 >
-                    S'inscrire
+                    S&apos;inscrire
                 </Button>
             </form>
 

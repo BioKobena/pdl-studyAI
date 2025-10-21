@@ -18,7 +18,7 @@ public class User {
     private String fullName;
     private String email;
     private String password; // pour l'instant stocké en clair — à remplacer par hash (bcrypt)
-    private List<String> roles = new ArrayList<>();
+    // private List<String> roles = new ArrayList<>();
     private Instant createdAt = Instant.now();
 
     public User() {}
@@ -27,7 +27,7 @@ public class User {
         this.fullName = fullName;
         this.email = email;
         this.password = password;
-        this.roles.add("USER");
+        // this.roles.add("USER");
     }
 
     // getters & setters (ou utilise Lombok @Data)
@@ -43,8 +43,8 @@ public class User {
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
 
-    public List<String> getRoles() { return roles; }
-    public void setRoles(List<String> roles) { this.roles = roles; }
+    // public List<String> getRoles() { return roles; }
+    // public void setRoles(List<String> roles) { this.roles = roles; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

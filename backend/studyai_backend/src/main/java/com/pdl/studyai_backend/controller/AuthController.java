@@ -41,22 +41,22 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Utilisateur créé"));
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req) {
-        return userService.findByEmail(req.getEmail())
-            .map(u -> {
-                boolean matches = passwordEncoder.matches(req.getPassword(), u.getPassword());
-                if (matches) {
-                    Map<String,Object> payload = new HashMap<>();
-                    payload.put("id", u.getId());
-                    payload.put("email", u.getEmail());
-                    payload.put("fullName", u.getFullName());
-                    // TODO : générer JWT ici
-                    return ResponseEntity.ok(payload);
-                } else {
-                    return ResponseEntity.status(401).body(Map.of("error", "Identifiants invalides"));
-                }
-            })
-            .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Utilisateur introuvable")));
-    }
+    // @PostMapping("/login")
+    // public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req) {
+    //     return userService.findByEmail(req.getEmail())
+    //         .map(u -> {
+    //             boolean matches = passwordEncoder.matches(req.getPassword(), u.getPassword());
+    //             if (matches) {
+    //                 Map<String,Object> payload = new HashMap<>();
+    //                 payload.put("id", u.getId());
+    //                 payload.put("email", u.getEmail());
+    //                 payload.put("fullName", u.getFullName());
+    //                 // TODO : générer JWT ici
+    //                 return ResponseEntity.ok(payload);
+    //             } else {
+    //                 return ResponseEntity.status(401).body(Map.of("error", "Identifiants invalides"));
+    //             }
+    //         })
+    //         .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Utilisateur introuvable")));
+    // }
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { FileText, Pencil, MessageCircle, ClipboardList } from 'lucide-react';
-import OptionButton from "../../../component/ui/OptionButton";
+import OptionButton from "../../../component/ui/option-button";
 
 export default function UploadSuccess() {
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);

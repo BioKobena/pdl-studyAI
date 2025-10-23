@@ -19,7 +19,7 @@ export default function LoginPage() {
             <h2 className="text-[#3FA9D9] text-2xl font-semibold mb-6">INSCRIPTION</h2>
 
             <p className="text-gray-600 mb-8">
-                Bienvenue sur studyAI, veuillez remplir vos informations :         
+                Bienvenue sur studyAI, veuillez remplir vos informations :
            </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -69,6 +69,7 @@ export default function LoginPage() {
                         <Eye className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     </div>
                 </div>
+
                 {/* Confirmation Password */}
                 <div>
                     <Label htmlFor="confpassword" className="text-[#3FA9D9] mb-2 block">

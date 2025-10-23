@@ -5,6 +5,7 @@ import React from "react";
 import FileUpload, {DropZone, FileError, FileList, FileInfo, FileProgress} from "@/component/ui/file-uploader";
 import { FileText, MessageCircle, GraduationCap } from "lucide-react";
 import { HoverEffect } from "@/component/ui/hover-effect";
+import {InteractiveHoverButton} from "@/component/ui/interactive-button"
 
 const projects = [
     {
@@ -84,17 +85,20 @@ export default function UploadFiles() {
                 </div>
 
                 {/* Section descriptive */}
-                <div className="text-center mb-8 mt-10">
+                <div className="text-center mb-2 mt-5">
                     <h2 className="bg-[#89C4F4] text-white inline-block px-8 py-4 rounded">
                         CE QUE VOUS POUVEZ FAIRE ?
                     </h2>
                 </div>
 
                 {/* Cards section insérée ici */}
-                <div className="mb-16">
+                <div className="mb-1">
                     <div className="max-w-5xl mx-auto px-8">
                         <HoverEffect items={projects} />
                     </div>
+                </div>
+                <div className="flex justify-end ml-4" >
+                    <InteractiveHoverButton text="Commencer" href="/dashboard/upload-success"/>
                 </div>
             </main>
         </div>

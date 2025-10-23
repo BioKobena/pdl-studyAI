@@ -2,9 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Button } from '@/component/ui/button';
-import { Input } from '@/component/ui/input';
-import { Label } from '@/component/ui/label';
-import { Mail, Eye } from 'lucide-react';
+import PasswordInput from "@/component/ui/password-input";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -23,36 +21,14 @@ export default function LoginPage() {
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Email */}
-                <div>
-                    <Label htmlFor="email" className="text-[#3FA9D9] mb-2 block">
-                        Nouveau mot de passe
-                    </Label>
-                     <div className="relative">
-                        <Input
-                            id="password"
-                            type="password"
-                            placeholder="Entrez votre mot de passe"
-                            className="pr-10 bg-white text-gray-600 border-gray-300"
-                        />
-                        <Eye className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    </div>
-                </div>
-
                 {/* Password */}
                 <div>
-                    <Label htmlFor="password" className="text-[#3FA9D9] mb-2 block">
-                        Confirmation du mot de passe 
-                    </Label>
-                    <div className="relative">
-                        <Input
-                            id="password"
-                            type="password"
-                            placeholder="Entrez votre mot de passe"
-                            className="pr-10 bg-white text-gray-600 border-gray-300"
-                        />
-                        <Eye className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    </div>
+                    <PasswordInput label="Nouveau mot de passe" id="Nouveau mot de passe" />
+                </div>
+
+                {/* confirm Password */}
+                <div>
+                    <PasswordInput label=" Confirmation du mot de passe" id="confirm-mot-password" />
                 </div>
 
                 {/* Submit button */}

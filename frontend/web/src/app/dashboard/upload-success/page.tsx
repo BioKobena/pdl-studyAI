@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { FileText, Pencil, MessageCircle, ClipboardList } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import OptionButton from "../../../component/ui/option-button";
 
 export default function UploadSuccess() {

@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/component/ui/button';
 import { Input } from '@/component/ui/input';
 import { Label } from '@/component/ui/label';
-import { Mail, Eye, User } from 'lucide-react';
+import { Mail, User } from 'lucide-react';
+import PasswordInput  from "@/component/ui/password-input";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -56,36 +57,13 @@ export default function LoginPage() {
 
                 {/* Password */}
                 <div>
-                    <Label htmlFor="password" className="text-[#3FA9D9] mb-2 block">
-                        Mot de passe
-                    </Label>
-                    <div className="relative">
-                        <Input
-                            id="password"
-                            type="password"
-                            placeholder="••••••••••••••••••••"
-                            className="pr-10 bg-white text-gray-600 border-gray-300"
-                        />
-                        <Eye className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    </div>
+                    <PasswordInput label="Mot de passe" id="mot-password" />
                 </div>
 
                 {/* Confirmation Password */}
                 <div>
-                    <Label htmlFor="confpassword" className="text-[#3FA9D9] mb-2 block">
-                        Confirmer le Mot de passe
-                    </Label>
-                    <div className="relative">
-                        <Input
-                            id="password"
-                            type="password"
-                            placeholder="••••••••••••••••••••"
-                            className="pr-10 bg-white text-gray-600 border-gray-300"
-                        />
-                        <Eye className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    </div>
+                    <PasswordInput label="Confirmer le Mot de passe" id="confirm-mot-password" />
                 </div>
-
 
                 {/* Submit button */}
                 <Button

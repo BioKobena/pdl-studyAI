@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import React from "react";
-import FileUpload, {
-    DropZone,
-    FileError,
-    FileList,
-    FileInfo,
-    FileProgress,
-} from "@/component/ui/file-uploader";
+import FileUpload, {DropZone, FileError, FileList, FileInfo, FileProgress} from "@/component/ui/file-uploader";
 import { FileText, MessageCircle, GraduationCap } from "lucide-react";
 import { HoverEffect } from "@/component/ui/hover-effect";
 
@@ -54,11 +48,11 @@ export default function UploadFiles() {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             {/* Main Content */}
-            <main className="flex-1 container mx-auto px-4 py-12 max-w-4xl">
+            <main className="flex-1 container mx-auto px-4 max-w-4xl">
                 {/* Upload Area */}
-                <div className="w-full max-w-2xl mx-auto p-4 sm:p-6 lg:p-8">
-                    <div className="space-y-2 mb-6">
-                        <h1 className="text-2xl font-bold tracking-tight text-red-700 mb-2">
+                <div className="w-full max-w-1xl mx-auto p-4 sm:p-6 lg:p-8">
+                    <div className="flex flex-col items-center space-y-2 mb-4 mt-4 justify-center">
+                        <h1 className="text-2xl font-bold tracking-tight text-red-700">
                             Dépose ton PDF
                         </h1>
                         <p className="text-muted-foreground">Révise plus vite.</p>

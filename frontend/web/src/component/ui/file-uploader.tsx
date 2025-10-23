@@ -2,7 +2,7 @@ import { useState, useRef, createContext, useContext, useEffect } from 'react'
 import { cn, generateUniqueId } from '@/lib/utils'
 import { Button } from '@/component/ui/button'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Trash, X, CircleAlert, Play, Pause, Upload, FileText, Image } from 'lucide-react'
+import { Trash, X, CircleAlert, Play, Pause, FileText, Image } from 'lucide-react'
 
 export interface FileInfo {
     id: string
@@ -448,10 +448,10 @@ export const DropZone: React.FC<DropZoneProps> = ({
     return (
         <div
             className={cn(
-                "relative flex flex-col items-center justify-center rounded-xl border-4 border-dashed transition-all cursor-pointer p-12 text-center shadow-sm",
+                "relative flex flex-col items-center justify-center rounded-xl border-4 border-dashed transition-all cursor-pointer p-16 text-center shadow-sm",
                 isDragging
-                    ? "bg-blue-500/10 border-blue-600"
-                    : "bg-blue-50 border-blue-400 hover:bg-blue-100 hover:border-blue-600",
+                    ? "bg-[#3FA9D9]/30 border-[#3FA9D9]"
+                    : "bg-[#E6F6FC] border-[#3FA9D9] hover:bg-[#D0EFFA] hover:border-[#2E93C8]",
                 disabled && "opacity-50 cursor-not-allowed",
                 className
             )}
@@ -474,14 +474,18 @@ export const DropZone: React.FC<DropZoneProps> = ({
         >
             {/* Icône centrale */}
             <div className="flex flex-col items-center justify-center space-y-3">
-                <FileText className="w-16 h-16 text-blue-600" />
-                <p className="text-blue-700 font-medium text-base">{prompt}</p>
+                <img src="/icon-upload.png" alt="Upload" className="w-16 h-16" />
+                <p className="text-blue-500 font-medium text-base">{prompt}</p>
                 {maxSize && (
                     <p className="text-sm text-blue-500 opacity-80">
                         Taille max : {maxSize} MB
                     </p>
                 )}
+                <p className="text-sm text-black-500 opacity-80">
+                    Fichier accepté<span className="text-red-500">*</span> : ".pdf, .docx, .doc, .png, .jpg, .jpeg"
+                </p>
             </div>
+
 
             <input
                 type="file"

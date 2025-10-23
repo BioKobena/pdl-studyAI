@@ -1,32 +1,31 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+# CI/CD pour voir si tout est ok dans notre projet
+# Ce script s'exécute automatiquement lorsqu'on fait push sur les différentes branches ou un pull_request sur les différentes branches énumérées
 
-name: NextJS CI
+name: CI/CD for Next.js
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: ["dev", "frontend", "dev-reset"]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "dev", "dev-reset" ]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm install
-    - run: npm run lint
-    - run: npm run build
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: npm install
+      # Pas de test dans notre cas, donc cette ligne ne sera pas utilisée
+      - name: Run tests
+        run: npm run test --if-present
+
+      # Test si on a pas de problème de syntaxe dans notre code 
+      - name: Test if lint is ok
+        run: npm run lint
+
+      # Ce run permet de tester si 
+      - name: Build project
+        run: npm run build

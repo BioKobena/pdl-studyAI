@@ -1,6 +1,6 @@
 'use client';
 
-import { Animation } from "@/component/ui/animationRobotAi";
+import { Animation } from "@/component/ui/animation-robotAi";
 import { Button } from '@/component/ui/button';
 import { useRouter } from 'next/navigation';
 

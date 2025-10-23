@@ -64,7 +64,7 @@ const AIMessageBar = () => {
             <Sparkles className="h-12 w-12 text-[#3FA9D9] mb-4" />
             <h3 className="text-[#3FA9D9] text-xl mb-2">How can I help you today?</h3>
             <p className="text-slate-400 text-sm max-w-xs">
-              Ask me anything and I'll do my best to assist you!
+              Ask me anything and I&apos;ll do my best to assist you!
             </p>
           </div>
         ) : (

@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Animation } from "@/component/ui/animationRobotAi";
+import { Animation } from "@/component/ui/animation-robotAi";
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex min-h-screen">

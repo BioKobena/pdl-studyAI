@@ -1,10 +1,11 @@
 package com.pdl.studyai_backend.service;
 import java.util.List;
-import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import com.pdl.studyai_backend.model.Resume;
 import com.pdl.studyai_backend.repository.ResumeRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class ResumeService {

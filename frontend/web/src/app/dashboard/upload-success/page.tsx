@@ -1,7 +1,7 @@
 'use client';
-
+import Link from 'next/link';
 import { useState } from 'react';
-import { FileText, Pencil, MessageCircle, ClipboardList } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import OptionButton from "../../../component/ui/option-button";
 
 export default function UploadSuccess() {
@@ -92,9 +92,12 @@ export default function UploadSuccess() {
                     </h2>
 
                     <div className="flex flex-wrap gap-6 justify-center mt-8">
+
                         <OptionButton icon="/resume.png" label="Résumé" />
                         <OptionButton icon="/chat.png" label="Chat" />
-                        <OptionButton icon="/quizz.png" label="Quizz" />
+                        <Link rel="stylesheet" href="/dashboard/quiz" >
+                             <OptionButton icon="/quizz.png" label="Quizz" />
+                        </Link>
                     </div>
                 </div>
             </main>

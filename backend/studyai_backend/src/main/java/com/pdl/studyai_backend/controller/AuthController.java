@@ -12,12 +12,14 @@ import com.pdl.studyai_backend.dto.LoginRequest;
 import com.pdl.studyai_backend.dto.SignupRequest;
 import com.pdl.studyai_backend.model.User;
 import com.pdl.studyai_backend.service.UserService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final UserService userService;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public AuthController(UserService svc) {
         this.userService = svc;
@@ -29,7 +31,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email déjà utilisé"));
         }
         // TODO : hasher le mot de passe (bcrypt) avant save
-        User u = new User(req.getFullName(), req.getEmail(), req.getPassword());
+        User u = new User(req.getFullName(), req.getEmail(), passwordEncoder.encode(req.getPassword()));
         userService.create(u);
         return ResponseEntity.ok(Map.of("message", "Utilisateur créé"));
     }
@@ -39,7 +41,8 @@ public class AuthController {
         return userService.findByEmail(req.getEmail())
             .map(u -> {
                 // TODO : remplacer par comparaison bcrypt
-                if (u.getPassword().equals(req.getPassword())) {
+                if (passwordEncoder.matches(req.getPassword(), u.getPassword())) {
+                // if (u.getPassword().equals(req.getPassword())) {
                     Map<String,Object> payload = new HashMap<>();
                     payload.put("id", u.getId());
                     payload.put("email", u.getEmail());

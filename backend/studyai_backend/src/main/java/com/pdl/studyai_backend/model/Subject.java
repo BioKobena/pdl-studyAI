@@ -1,5 +1,6 @@
 package com.pdl.studyai_backend.model;
 
+import java.time.Instant;
 import java.util.Date;
 
 import org.springframework.data.annotation.Id;
@@ -13,21 +14,22 @@ public class Subject {
 
     private String userId; 
     
-    private String typeSubject;
+    // private String typeSubject;
+     
+    private String title;
     
-    private Date dateCreation; 
+    private Instant createdAt = Instant.now();
     
     private String extractText;
 
     public Subject() {}
 
-    public Subject(String userId, String typeSubject, Date dateCreation, String extractText) {
+    public Subject(String userId, String title, String extractText) {
         this.userId = userId;
-        this.typeSubject = typeSubject;
-        this.dateCreation = dateCreation;
+        // this.typeSubject = typeSubject;
+        this.title = title;
         this.extractText = extractText;
     }
-
 
     public String getId() {
         return id;
@@ -41,20 +43,20 @@ public class Subject {
         this.userId = userId;
     }
 
-    public String getTypeSubject() {
-        return typeSubject;
+    // public String getTypeSubject() {
+    //     return typeSubject;
+    // }
+
+    // public void setTypeSubject(String typeSubject) {
+    //     this.typeSubject = typeSubject;
+    // }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 
-    public void setTypeSubject(String typeSubject) {
-        this.typeSubject = typeSubject;
-    }
-
-    public Date getDateCreation() {
-        return dateCreation;
-    }
-
-    public void setDateCreation(Date dateCreation) {
-        this.dateCreation = dateCreation;
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 
     public String getExtractText() {
@@ -63,5 +65,13 @@ public class Subject {
 
     public void setExtractText(String extractText) {
         this.extractText = extractText;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 }

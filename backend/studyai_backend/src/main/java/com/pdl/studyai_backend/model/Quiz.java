@@ -14,7 +14,6 @@ public class Quiz {
 
     public Quiz() {}
 
-    // Getters et setters
     public String getId() {
         return id;
     }

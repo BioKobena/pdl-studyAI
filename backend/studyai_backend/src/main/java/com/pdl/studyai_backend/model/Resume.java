@@ -4,15 +4,21 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "resumes")
+
 public class Resume {
     @Id
     private String id;
     private String subjectId;
     private String texteResume;
 
-    public Resume() {}
+    public Resume() {
+    }
 
-    // Getters et setters
+    public Resume(String subjectId, String texteResume) {
+        this.subjectId = subjectId;
+        this.texteResume = texteResume;
+    }
+
     public String getId() {
         return id;
     }

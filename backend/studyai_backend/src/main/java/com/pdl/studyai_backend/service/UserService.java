@@ -13,11 +13,11 @@ import com.pdl.studyai_backend.repository.UserRepository;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    // private final BCryptPasswordEncoder passwordEncoder;
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        // this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
     public User create(User user) {

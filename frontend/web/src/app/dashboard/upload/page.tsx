@@ -1,104 +1,104 @@
-'use client';
+"use client";
 
-import { Upload, FileText, File } from 'lucide-react';
-import { Button } from '@/component/ui/button';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import React from "react";
+import FileUpload, {DropZone, FileError, FileList, FileInfo, FileProgress} from "@/component/ui/file-uploader";
+import { FileText, MessageCircle, GraduationCap } from "lucide-react";
+import { HoverEffect } from "@/component/ui/hover-effect";
+import {InteractiveHoverButton} from "@/component/ui/interactive-button"
 
-export default function UploadPage() {
-    const router = useRouter();
+const projects = [
+    {
+        title: "Générer un résumé intelligent",
+        description:
+            "Obtenez un résumé clair et structuré de votre document pour réviser plus efficacement.",
+        icon: <FileText size={40} />,
+    },
+    {
+        title: "Discuter avec ton fichier",
+        description:
+            "Pose des questions à ton fichier et reçois des réponses précises comme si tu parlais à ton cours.",
+        icon: <MessageCircle size={40} />,
+    },
+    {
+        title: "Créer un quiz personnalisé",
+        description:
+            "Teste tes connaissances avec un quiz généré à partir du contenu de ton fichier.",
+        icon: <GraduationCap size={40} />,
+    },
+];
 
-    const recentFiles = [
-        { name: 'cours_base_de_donnees.pdf', size: '18 Mo', type: 'pdf', icon: 'pdf' },
-        { name: 'cours_base_de_donnees.docx', size: '18 Mo', type: 'docx', icon: 'docx' },
-        { name: 'cours_base_de_donnees.txt', size: '18 Mo', type: 'txt', icon: 'txt' },
-        { name: 'cours_base_de_donnees.pdf', size: '18 Mo', type: 'pdf', icon: 'pdf' },
-        { name: 'cours_base_de_donnees.pdf', size: '18 Mo', type: 'pdf', icon: 'pdf' },
-        { name: 'cours_modelisation_ensemble.txt', size: '18 Mo', type: 'txt', icon: 'txt' }
-    ];
 
-    const getFileIcon = (type: string) => {
-        const iconClass = "w-5 h-5";
-        switch(type) {
-            case 'pdf':
-                return <FileText className={`${iconClass} text-red-500`} />;
-            case 'docx':
-                return <FileText className={`${iconClass} text-blue-500`} />;
-            case 'txt':
-                return <File className={`${iconClass} text-gray-500`} />;
-            default:
-                return <File className={iconClass} />;
-        }
+export default function UploadFiles() {
+    const [uploadFiles, setUploadFiles] = useState<FileInfo[]>([]);
+
+    const onFileSelectChange = (files: FileInfo[]) => {
+        setUploadFiles(files);
     };
 
-    const getFileColor = (type: string) => {
-        switch(type) {
-            case 'pdf':
-                return 'bg-red-100';
-            case 'docx':
-                return 'bg-blue-100';
-            case 'txt':
-                return 'bg-gray-100';
-            default:
-                return 'bg-gray-100';
-        }
+    const onRemove = (fileId: string) => {
+        setUploadFiles(uploadFiles.filter((file) => file.id !== fileId));
+    };
+
+    const getFileIcon = (type: string) => {
+        if (type === "pdf") return "text-red-500";
+        else if (type === "docx" || type === "doc") return "text-blue-500";
+        else return "text-gray-500";
     };
 
     return (
-        <div className="min-h-screen bg-[#F5F5F5]">
-
-            {/* Main content */}
-            <main className="container mx-auto px-8 py-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    {/* Left side - Upload area */}
-                    <div>
-                        <div className="bg-white rounded-lg p-8 flex items-center justify-center min-h-[400px]">
-                            <div className="text-center">
-                                {/* Upload icon */}
-                                <div className="mb-6">
-                                    <div className="w-32 h-32 mx-auto border-4 border-dashed border-[#3FA9D9] rounded-lg flex items-center justify-center">
-                                        <Upload className="w-16 h-16 text-[#3FA9D9]" strokeWidth={1.5} />
-                                    </div>
-                                </div>
-
-                                {/* Upload button */}
-                                <Button className="bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white mb-4">
-                                    Uploader son pdf
-                                </Button>
-
-                                {/* Accepted formats */}
-                                <p className="text-gray-500 text-sm">
-                                    Fichier accepté : .pdf, .txt, .docs, .docx
-                                </p>
-                            </div>
-                        </div>
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+            {/* Main Content */}
+            <main className="flex-1 container mx-auto px-4 max-w-4xl">
+                {/* Upload Area */}
+                <div className="w-full max-w-1xl mx-auto p-4 sm:p-6 lg:p-8">
+                    <div className="flex flex-col items-center space-y-2 mb-4 mt-4 justify-center">
+                        <h1 className="text-2xl font-bold tracking-tight text-red-700">
+                            Dépose ton PDF
+                        </h1>
+                        <p className="text-muted-foreground">Révise plus vite.</p>
                     </div>
 
-                    {/* Right side - Recent files */}
-                    <div>
-                        <h3 className="mb-6 text-gray-700">Fichier récemment uploadé :</h3>
-
-                        <div className="space-y-3">
-                            {recentFiles.map((file, index) => (
-                                <div
-                                    key={index}
-                                    className="bg-[#A8D5E2] hover:bg-[#95C8D8] transition-colors rounded-lg p-4 flex items-center justify-between cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        {/* File icon */}
-                                        <div className={`w-10 h-10 ${getFileColor(file.type)} rounded flex items-center justify-center`}>
-                                            {getFileIcon(file.type)}
-                                        </div>
-
-                                        {/* File name */}
-                                        <span className="text-white">{file.name}</span>
-                                    </div>
-
-                                    {/* File size */}
-                                    <span className="text-white">{file.size}</span>
-                                </div>
-                            ))}
+                    {/* File Upload */}
+                    <FileUpload
+                        files={uploadFiles}
+                        onFileSelectChange={onFileSelectChange}
+                        multiple={false}
+                        accept=".pdf,.docx,.doc,.png,.jpg,.jpeg"
+                        maxSize={10}
+                        maxCount={1}
+                        className="mt-2"
+                        disabled={false}
+                    >
+                        <div className="space-y-4">
+                            <DropZone prompt="Clique ou dépose ton fichier ici" />
+                            <FileError />
+                            <FileProgress />
+                            <FileList
+                                files={uploadFiles}
+                                onClear={() => setUploadFiles([])}
+                                onRemove={onRemove}
+                                canResume={true}
+                            />
                         </div>
+                    </FileUpload>
+                </div>
+
+                {/* Section descriptive */}
+                <div className="text-center mb-2 mt-5">
+                    <h2 className="bg-[#89C4F4] text-white inline-block px-8 py-4 rounded">
+                        CE QUE VOUS POUVEZ FAIRE ?
+                    </h2>
+                </div>
+
+                {/* Cards section insérée ici */}
+                <div className="mb-1">
+                    <div className="max-w-5xl mx-auto px-8">
+                        <HoverEffect items={projects} />
                     </div>
+                </div>
+                <div className="flex justify-end ml-4" >
+                    <InteractiveHoverButton text="Commencer" href="/dashboard/upload-success"/>
                 </div>
             </main>
         </div>

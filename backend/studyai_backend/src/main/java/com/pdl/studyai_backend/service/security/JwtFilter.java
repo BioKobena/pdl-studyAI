@@ -25,6 +25,17 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+
+        // Ignorer les routes publiques
+        if (path.startsWith("/api/auth/signup") ||
+            path.startsWith("/api/auth/login") ||
+            path.startsWith("/swagger-ui") ||
+            path.startsWith("/api-docs")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -37,6 +48,10 @@ public class JwtFilter extends OncePerRequestFilter {
                 response.getWriter().write("Invalid or expired token");
                 return;
             }
+        }else {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Missing Authorization header");
+            return;
         }
 
         filterChain.doFilter(request, response);

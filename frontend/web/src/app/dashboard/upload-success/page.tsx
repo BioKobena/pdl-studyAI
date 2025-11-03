@@ -1,6 +1,10 @@
 'use client';
 import Link from 'next/link';
+<<<<<<< HEAD
 import { useState, useEffect, useMemo } from 'react';
+=======
+import { useState } from 'react';
+>>>>>>> d4dc2c874b9c19afd1141d330adc18d395eaeca8
 import { FileText } from 'lucide-react';
 import OptionButton from "../../../component/ui/option-button";
 import { useSearchParams } from 'next/navigation';
@@ -64,11 +68,30 @@ export default function UploadSuccess() {
     URL.revokeObjectURL(url);
   };
 
+<<<<<<< HEAD
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-2xl mx-auto px-6 py-5">
         <div className="text-center mb-4">
           <p className="text-2xl text-[#3FA9D9]">Révise plus vite</p>
+=======
+                {/* Options Section */}
+                <div className="flex flex-col items-center justify-center min-h-screenspace-y-6">
+                    <h2 className="text-2xl text-gray-700">
+                        Commençons votre révision, choisissez une option :
+                    </h2>
+
+                    <div className="flex flex-wrap gap-6 justify-center mt-8">
+
+                        <OptionButton icon="/resume.png" label="Résumé" />
+                        <OptionButton icon="/chat.png" label="Chat" />
+                        <Link rel="stylesheet" href="/dashboard/quiz" >
+                             <OptionButton icon="/quizz.png" label="Quizz" />
+                        </Link>
+                    </div>
+                </div>
+            </main>
+>>>>>>> d4dc2c874b9c19afd1141d330adc18d395eaeca8
         </div>
 
         {/* Upload Area */}

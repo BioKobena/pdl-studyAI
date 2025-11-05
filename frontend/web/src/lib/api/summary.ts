@@ -1,14 +1,50 @@
-export async function summarizeText(text: string, title?: string) {
-  const base = process.env.NEXT_PUBLIC_API_BASE!;
-  const res = await fetch(`${base}/api/summary`, {
+import { http, setToken } from "./http";
+
+// ---------- Types ----------
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginSuccess {
+  id: string;
+  email: string;
+  fullName: string;
+  token: string; // <-- nouveau
+}
+
+export interface LoginError {
+  error: string;
+}
+
+export interface SignupRequest {
+  fullName: string;
+  email: string;
+}
+
+// ---------- API calls ----------
+
+// LOGIN
+export async function login(payload: LoginRequest) {
+  // le back renvoie 200 avec {id, email, fullName, token}
+  const res = await http<LoginSuccess>("/api/auth/login", {
     method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, title, language: "fr" }),
+    body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    const data = await res.json().catch(() => null);
-    throw new Error(data?.error || "Échec du résumé");
+  return res; // pas de setToken ici: le back n’envoie pas encore de JWT
+
+  // on sauvegarde le token pour les requêtes protégées
+  if (res.token) {
+    setToken(res.token);
   }
-  return res.json() as Promise<{ summary: string }>;
+
+  return res;
+}
+
+// SIGNUP
+export async function signup(payload: SignupRequest) {
+  return http<SignupResponse>("/api/auth/signup", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }

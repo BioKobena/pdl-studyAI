@@ -14,13 +14,13 @@ public class StudioAiService {
         GenerateContentResponse response;
         try ( 
                 Client client = new Client()) {
-            response = client.models.generateContent(
-                    "gemini-2.5-flash",
-                    prompt,
-                    null
-            );
-            // GenerateContentResponse res = client.models.gene
-        }
+                    response = client.models.generateContent(
+                        "gemini-2.5-flash",
+                        prompt,
+                        null
+                );
+                // GenerateContentResponse res = client.models.gene
+            }
         // GenerateContentResponse res = client.models.gene
         return response.text();
     }

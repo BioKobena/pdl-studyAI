@@ -18,16 +18,16 @@ public class SwaggerConfig {
                         .title("Study AI Backend API")
                         .description("API documentation for StudyAI Backend (Spring Boot + MongoDB + JWT)")
                         .version("1.0.0"))
-                // .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
-                // .components(new Components()
-                //         .addSecuritySchemes("bearerAuth",
-                //                 new SecurityScheme()
-                //                         .name("bearerAuth")
-                //                         .type(SecurityScheme.Type.HTTP)
-                //                         .scheme("bearer")
-                //                         .bearerFormat("JWT")
-                //         )
-                // )
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                .components(new Components()
+                        .addSecuritySchemes("bearerAuth",
+                                new SecurityScheme()
+                                        .name("bearerAuth")
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")
+                        )
+                )
         ;
     }
 }

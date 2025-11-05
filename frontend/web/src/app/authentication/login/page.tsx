@@ -24,11 +24,7 @@ export default function LoginPage() {
     try {
       const res = await login({ email, password } as LoginRequest);
 
-      if ('error' in res) {
-        setErr(res.error || "Identifiants invalides");
-        return;
-      }
-
+     
       // succès: on sauvegarde l'utilisateur minimal et on redirige
       const u = res as LoginSuccess;
       saveUser({ id: u.id, email: u.email, fullName: u.fullName });

@@ -34,9 +34,7 @@ public class StudioAiController {
             if (claims == null) {
                 return ResponseEntity.status(401).body("Token manquant ou invalide");
             }
-
             return ResponseEntity.ok(studioAiService.ask(prompt));
-
             // return ResponseEntity.ok(user);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erreur interne : " + e.getMessage());

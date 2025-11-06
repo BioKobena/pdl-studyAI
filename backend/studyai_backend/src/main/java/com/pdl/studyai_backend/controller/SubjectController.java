@@ -1,5 +1,7 @@
 package com.pdl.studyai_backend.controller;
 
+import java.util.List;
+
 import jakarta.validation.Valid;
 
 import java.util.Map;
@@ -9,17 +11,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.pdl.studyai_backend.dto.SubjectRequest;
+import com.pdl.studyai_backend.model.Resume;
 import com.pdl.studyai_backend.model.Subject;
 import com.pdl.studyai_backend.service.SubjectService;
+import com.pdl.studyai_backend.service.ResumeService;
 
 @RestController
 @RequestMapping("/api/subjects")
 public class SubjectController {
     
     private final SubjectService subjectService;
+    private final ResumeService resumeService;
 
-    public SubjectController(SubjectService subjectService) {
+    public SubjectController(SubjectService subjectService, ResumeService resumeService) {
         this.subjectService = subjectService;
+        this.resumeService = resumeService;
     }
 
     @PostMapping("/create")
@@ -65,4 +71,31 @@ public class SubjectController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchSubjects(@RequestParam String query) {
+        try {
+            if (query == null || query.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Le paramètre de requête ne peut pas être vide");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur interne : " + e.getMessage());
+        }
+        return ResponseEntity.ok(subjectService.searchSubjects(query));
+    }
+
+    @GetMapping("/resume/{subjectId}")
+    public ResponseEntity<?> getResumesBySubjectId(@PathVariable String subjectId) {
+        try {
+            Resume resume = this.resumeService.getActiveResumeBySubjectId(subjectId);
+            if (resume != null) {
+                return ResponseEntity.ok(resume);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur interne : " + e.getMessage());
+        }
+    }
+
 }

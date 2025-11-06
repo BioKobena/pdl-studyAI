@@ -4,8 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { FileText } from 'lucide-react';
 import OptionButton from "../../../component/ui/option-button";
 import { useSearchParams } from 'next/navigation';
+import { createSubject } from "@/lib/api/subject";
 
-type PdfMeta = { chars: number; ms?: number; pages?: number }; 
+type PdfMeta = { chars: number; ms?: number; pages?: number };
 
 export default function UploadSuccess() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -18,27 +19,64 @@ export default function UploadSuccess() {
   const [sessBlobUrl, setSessBlobUrl] = useState<string>('');
   const [sessText, setSessText] = useState<string>('');
   const [meta, setMeta] = useState<PdfMeta | null>(null);               
-  const [showExtract, setShowExtract] = useState(false);                 
+  const [showExtract, setShowExtract] = useState(false);
 
   useEffect(() => {
     if (!key) return;
-    const name = sessionStorage.getItem(`pdfName:${key}`) || '';
-    const blob = sessionStorage.getItem(`pdfBlobUrl:${key}`) || '';
-    const text = sessionStorage.getItem(`pdfText:${key}`) || '';
-    const metaRaw = sessionStorage.getItem(`pdfMeta:${key}`);            
+
+    const name = sessionStorage.getItem(`pdfName:${key}`) || "";
+    const blob = sessionStorage.getItem(`pdfBlobUrl:${key}`) || "";
+    const text = sessionStorage.getItem(`pdfText:${key}`) || "";
+    const metaRaw = sessionStorage.getItem(`pdfMeta:${key}`);
 
     setSessName(name);
     setSessBlobUrl(blob);
     setSessText(text);
 
     if (metaRaw) {
-      try { setMeta(JSON.parse(metaRaw) as PdfMeta); } catch {}
+      try {
+        setMeta(JSON.parse(metaRaw) as PdfMeta);
+      } catch {
+        setMeta({ chars: text.length });
+      }
     } else {
-      setMeta({ chars: text.length });                                   
+      setMeta({ chars: text.length });
     }
 
-    return () => { if (blob) URL.revokeObjectURL(blob); };
+    //Lancer la création du subject une fois que le texte est chargé
+    if (text && text.trim().length > 0) {
+      const hasBeenCreated = sessionStorage.getItem(`subjectCreated:${key}`);
+      const userId = localStorage.getItem("userId") ;
+
+      if (!hasBeenCreated) {
+        (async () => {
+          try {
+
+            const res = await createSubject({
+              userId: userId,
+              title: name || "Document sans titre",
+              extractText: text,
+            });
+            console.log("Sujet créé :", res);
+            sessionStorage.setItem(`subjectCreated:${key}`, "true");
+            sessionStorage.setItem(`subjectId:${key}`, res.id || ""); // si ton API renvoie un id
+          } catch (err: unknown) {
+            if (err instanceof Error) {
+              console.error("Erreur lors de la création du subject :", err.message);
+            } else {
+              console.error("Erreur lors de la création du subject :", String(err));
+            }
+          }
+
+        })();
+      }
+    }
+
+    return () => {
+      if (blob) URL.revokeObjectURL(blob);
+    };
   }, [key]);
+
 
   const isScan = useMemo(() => key && sessText.trim().length === 0, [key, sessText]);
   const hasText = useMemo(() => sessText.trim().length > 0, [sessText]); // AJOUT

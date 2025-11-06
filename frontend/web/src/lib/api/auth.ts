@@ -37,6 +37,8 @@ export async function login(payload: LoginRequest) {
     method: "POST",
     body: JSON.stringify(payload),
   });
+  localStorage.setItem("userId",res.id);
+
 
   // on sauvegarde le token pour les requêtes protégées
   if (res.token) {

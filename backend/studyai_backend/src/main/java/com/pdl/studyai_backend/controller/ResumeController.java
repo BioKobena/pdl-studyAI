@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +23,7 @@ import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
+@CrossOrigin(origins="http://localhost:3000")
 @RequestMapping("api/resume")
 public class ResumeController {
 
@@ -44,10 +46,10 @@ public class ResumeController {
             if (subject == null) {
                 return ResponseEntity.status(404).body("Sujet non trouvé");
             }
-            Resume r = new Resume(reqResume.getSubjectId(), reqResume.getTextResume());
-            resumeService.create(r);
+            Resume r = new Resume(reqResume.getSubjectId(), subject.getExtractText());
+            Resume resume = this.resumeService.create(r);
 
-            return ResponseEntity.ok(Map.of("message", "Résumé créé avec succès !"));
+            return ResponseEntity.ok(Map.of("message", "Résumé créé avec succès !", "resume", resume));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erreur interne : " + e.getMessage());
         }

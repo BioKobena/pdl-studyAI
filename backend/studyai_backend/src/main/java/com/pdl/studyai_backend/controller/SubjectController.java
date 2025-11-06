@@ -1,7 +1,5 @@
 package com.pdl.studyai_backend.controller;
 
-import java.util.List;
-
 import jakarta.validation.Valid;
 
 import java.util.Map;
@@ -17,6 +15,7 @@ import com.pdl.studyai_backend.service.SubjectService;
 import com.pdl.studyai_backend.service.ResumeService;
 
 @RestController
+@CrossOrigin(origins="*")
 @RequestMapping("/api/subjects")
 public class SubjectController {
     
@@ -29,12 +28,25 @@ public class SubjectController {
     }
 
     @PostMapping("/create")
+    @CrossOrigin
     public ResponseEntity<?> createSubject(@Valid @RequestBody SubjectRequest req) {
+        System.out.println("Received Subject Creation Request: " + req);
+        try {
+            if (req.getTitle() == null || req.getTitle().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Le titre ne peut pas être vide");
+            }
+            if (req.getExtractText() == null || req.getExtractText().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Le texte extrait ne peut pas être vide");
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur interne : " + e.getMessage());
+        }
         // Implémentation de la création de sujet
         Subject subject = new Subject(req.getUserId(), req.getTitle(), req.getExtractText());
-        subjectService.createSubject(subject);
+        Subject payload = this.subjectService.createSubject(subject);
 
-        return ResponseEntity.ok(Map.of("message", "Utilisateur créé"));
+        return ResponseEntity.ok(Map.of("message", "Sujet créé", "subject", payload));
     }
 
     @GetMapping("/{id}")

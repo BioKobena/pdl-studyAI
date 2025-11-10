@@ -9,26 +9,44 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.pdl.studyai_backend.dto.SubjectRequest;
+import com.pdl.studyai_backend.model.Resume;
 import com.pdl.studyai_backend.model.Subject;
 import com.pdl.studyai_backend.service.SubjectService;
+import com.pdl.studyai_backend.service.ResumeService;
 
 @RestController
+@CrossOrigin(origins="*")
 @RequestMapping("/api/subjects")
 public class SubjectController {
     
     private final SubjectService subjectService;
+    private final ResumeService resumeService;
 
-    public SubjectController(SubjectService subjectService) {
+    public SubjectController(SubjectService subjectService, ResumeService resumeService) {
         this.subjectService = subjectService;
+        this.resumeService = resumeService;
     }
 
     @PostMapping("/create")
+    @CrossOrigin
     public ResponseEntity<?> createSubject(@Valid @RequestBody SubjectRequest req) {
+        System.out.println("Received Subject Creation Request: " + req);
+        try {
+            if (req.getTitle() == null || req.getTitle().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Le titre ne peut pas être vide");
+            }
+            if (req.getExtractText() == null || req.getExtractText().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Le texte extrait ne peut pas être vide");
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur interne : " + e.getMessage());
+        }
         // Implémentation de la création de sujet
         Subject subject = new Subject(req.getUserId(), req.getTitle(), req.getExtractText());
-        subjectService.createSubject(subject);
+        Subject payload = this.subjectService.createSubject(subject);
 
-        return ResponseEntity.ok(Map.of("message", "Utilisateur créé"));
+        return ResponseEntity.ok(Map.of("message", "Sujet créé", "subject", payload));
     }
 
     @GetMapping("/{id}")
@@ -65,4 +83,31 @@ public class SubjectController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchSubjects(@RequestParam String query) {
+        try {
+            if (query == null || query.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Le paramètre de requête ne peut pas être vide");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur interne : " + e.getMessage());
+        }
+        return ResponseEntity.ok(subjectService.searchSubjects(query));
+    }
+
+    @GetMapping("/resume/{subjectId}")
+    public ResponseEntity<?> getResumesBySubjectId(@PathVariable String subjectId) {
+        try {
+            Resume resume = this.resumeService.getActiveResumeBySubjectId(subjectId);
+            if (resume != null) {
+                return ResponseEntity.ok(resume);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur interne : " + e.getMessage());
+        }
+    }
+
 }

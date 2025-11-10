@@ -15,7 +15,7 @@ public class User {
     private String id;
     private String fullName;
     private String email;
-    private String password; // pour l'instant stocké en clair — à remplacer par hash (bcrypt)
+    private String password; 
     private Instant createdAt = Instant.now();
 
     public User() {}

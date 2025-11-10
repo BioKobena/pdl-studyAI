@@ -14,7 +14,7 @@ export async function createSubject(data: SubjectData) {
     console.log("Token used for request:", token);
 
     // Make the API request with Authorization header
-    const response = await fetch("http://192.168.43.88:8085/api/subjects/create", {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/subjects/create`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -28,4 +28,5 @@ export async function createSubject(data: SubjectData) {
     }
 
     return await response.json();
+
 }

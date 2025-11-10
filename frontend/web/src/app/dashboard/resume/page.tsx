@@ -1,7 +1,10 @@
+'use client';
+import { withAuth } from "@/lib/api/withAuth.client";
 import { ResumePDFViewer } from "../../../component/ui/resume-pdf-viewer";
 import { ArrowLeft } from "lucide-react";
 
-export default function App() {
+function App() {
+
   return (
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Back arrow and title */}
@@ -21,3 +24,4 @@ export default function App() {
       </main>
   );
 }
+export default withAuth(App);

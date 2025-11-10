@@ -5,10 +5,10 @@ import { FileText } from 'lucide-react';
 import OptionButton from "../../../component/ui/option-button";
 import { useSearchParams } from 'next/navigation';
 import { createSubject } from "@/lib/api/subject";
-
+import { withAuth } from '@/lib/api/withAuth.client';
 type PdfMeta = { chars: number; ms?: number; pages?: number };
 
-export default function UploadSuccess() {
+function UploadSuccess() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -230,3 +230,4 @@ export default function UploadSuccess() {
     </div>
   );
 }
+export default withAuth(UploadSuccess);

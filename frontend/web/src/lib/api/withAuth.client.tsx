@@ -31,8 +31,7 @@ export function withAuth<P extends object>(Comp: React.ComponentType<P>) {
           typeof window !== "undefined" ? window.location.pathname : "/";
 
         // Redirection côté client
-        // 💡 Si ta page de login est à /authentication/login,
-        //    remplace "/login" ci-dessous par "/authentication/login"
+       
         router.replace(`/authentication/login`);
       }
     }, [router]); // dépendance sur router (bonne pratique)

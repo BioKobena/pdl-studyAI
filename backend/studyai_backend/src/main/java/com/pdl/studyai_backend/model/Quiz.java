@@ -1,5 +1,6 @@
 package com.pdl.studyai_backend.model;
 
+import java.time.Instant;
 import java.util.List;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -11,6 +12,7 @@ public class Quiz {
     private String subjectId;
     private List<String> questions;
     private List<String> answers;
+    private Instant createdAt = Instant.now();
 
     public Quiz() {}
 
@@ -59,5 +61,13 @@ public class Quiz {
             this.questions.remove(index);
             this.answers.remove(index);
         }
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }

@@ -18,6 +18,7 @@ import com.pdl.studyai_backend.model.Resume;
 import com.pdl.studyai_backend.model.Subject;
 import com.pdl.studyai_backend.service.ResumeService;
 import com.pdl.studyai_backend.service.SubjectService;
+import com.pdl.studyai_backend.service.StudioAiService;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,10 +30,13 @@ public class ResumeController {
 
     private final ResumeService resumeService;
     private final SubjectService subjectService;
+    private final StudioAiService studioAiService;
+    private final String promptHeader = "Génère un résumé concis en français du texte suivant :\n\n";
 
-    public ResumeController(ResumeService service, SubjectService subjectService) {
+    public ResumeController(ResumeService service, SubjectService subjectService, StudioAiService studioAiService) {
         this.resumeService = service;
         this.subjectService = subjectService;
+        this.studioAiService = studioAiService;
     }
 
     @PostMapping("/create")
@@ -46,7 +50,8 @@ public class ResumeController {
             if (subject == null) {
                 return ResponseEntity.status(404).body("Sujet non trouvé");
             }
-            Resume r = new Resume(reqResume.getSubjectId(), subject.getExtractText());
+            String generatedSummary = this.studioAiService.ask(this.promptHeader + subject.getExtractText());
+            Resume r = new Resume(reqResume.getSubjectId(), generatedSummary);
             Resume resume = this.resumeService.create(r);
 
             return ResponseEntity.ok(Map.of("message", "Résumé créé avec succès !", "resume", resume));

@@ -22,6 +22,7 @@ export async function createSubject(data: SubjectData) {
         },
         body: JSON.stringify(data),
     });
+    console.log("ceci est reponse",response)
 
     if (!response.ok) {
         throw new Error(`API Error: ${response.status}`);

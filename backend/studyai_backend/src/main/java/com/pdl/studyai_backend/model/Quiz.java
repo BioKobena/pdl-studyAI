@@ -10,11 +10,16 @@ public class Quiz {
     @Id
     private String id;
     private String subjectId;
-    private List<String> questions;
-    private List<String> answers;
+    private List<Question> questions;
     private Instant createdAt = Instant.now();
 
     public Quiz() {}
+
+    //constructors
+    public Quiz(String subjectId, List<Question> questions) {
+        this.subjectId = subjectId;
+        this.questions = questions;
+    }
 
     public String getId() {
         return id;
@@ -28,40 +33,30 @@ public class Quiz {
         this.subjectId = subjectId;
     }
 
-    public List<String> getQuestions() {
+    public List<Question> getQuestions() {
         return questions;
     }
 
-    public void setQuestions(List<String> questions) {
+    public void setQuestions(List<Question> questions) {
         this.questions = questions;
     }
 
-    public List<String> getAnswers() {
-        return answers;
-    }
-
-    public void setAnswers(List<String> answers) {
-        this.answers = answers;
-    }
-
-    public Quiz(String subjectId, List<String> questions, List<String> answers) {
+    public Quiz(String subjectId) {
         this.subjectId = subjectId;
-        this.questions = questions;
-        this.answers = answers;
     }
 
-    public void addQuestion(String question, String answer) {
-        this.questions.add(question);
-        this.answers.add(answer);
-    }
+    // public void addQuestion(String question, String answer) {
+    //     this.questions.add(question);
+    //     this.answers.add(answer);
+    // }
 
-    public void removeQuestion(String question) {
-        int index = this.questions.indexOf(question);
-        if (index != -1) {
-            this.questions.remove(index);
-            this.answers.remove(index);
-        }
-    }
+    // public void removeQuestion(String question) {
+    //     int index = this.questions.indexOf(question);
+    //     if (index != -1) {
+    //         this.questions.remove(index);
+    //         this.answers.remove(index);
+    //     }
+    // }
 
     public Instant getCreatedAt() {
         return createdAt;

@@ -15,7 +15,7 @@ public class QuizService {
     public Quiz create(Quiz quiz) {
         return quizRepository.save(quiz);
     }
-    public Quiz findById(String id) {
+    public Quiz getQuizById(String id) {
         return quizRepository.findById(id).orElse(null);
     }
     public List<Quiz> findAll() {

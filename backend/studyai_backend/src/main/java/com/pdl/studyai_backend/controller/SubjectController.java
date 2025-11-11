@@ -96,12 +96,12 @@ public class SubjectController {
         return ResponseEntity.ok(subjectService.searchSubjects(query));
     }
 
-    @GetMapping("/resume/{subjectId}")
+    @GetMapping("/{subjectId}/resume")
     public ResponseEntity<?> getResumesBySubjectId(@PathVariable String subjectId) {
         try {
             Resume resume = this.resumeService.getActiveResumeBySubjectId(subjectId);
             if (resume != null) {
-                return ResponseEntity.ok(resume);
+                return ResponseEntity.ok(Map.of("message", "Résumé actif trouvé", "resume", resume));
             } else {
                 return ResponseEntity.notFound().build();
             }

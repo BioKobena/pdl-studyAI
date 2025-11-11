@@ -6,6 +6,7 @@ export interface SubjectData {
 
 export async function createSubject(data: SubjectData) {
     // Get the auth token from localStorage
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
     const token = localStorage.getItem('auth_token');
     if (!token) {
         throw new Error("No auth token found. Please log in first.");
@@ -14,7 +15,7 @@ export async function createSubject(data: SubjectData) {
     console.log("Token used for request:", token);
 
     // Make the API request with Authorization header
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/subjects/create`, {
+    const response = await fetch(`${base}/api/subjects/create`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

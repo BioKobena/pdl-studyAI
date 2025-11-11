@@ -61,14 +61,12 @@ function UploadSuccess() {
 
             const subjectId = res?.subject?.id;
             if (subjectId) {
-              localStorage.setItem("lastSubjectId", subjectId);
-              sessionStorage.setItem(`subjectId:${key}`, subjectId);
+              localStorage.setItem("SubjectId", subjectId);
               console.log("Subject ID sauvegardé :", subjectId);
             } else {
               console.warn("Aucun ID trouvé dans la réponse :", res);
             }
 
-            sessionStorage.setItem(`subjectCreated:${key}`, "true");
           } catch (err: unknown) {
             if (err instanceof Error) {
               console.error("Erreur lors de la création du subject :", err.message);

@@ -7,7 +7,7 @@ on:
     branches: [main, master, dev, frontend, dev-reset]
     paths:
       - 'frontend/web/**'
-      - '.github/workflows/frontend-ci.yml'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [main, master, dev, dev-reset]
     paths:
@@ -77,7 +77,7 @@ jobs:
         env:
           NODE_ENV: production
           # Définis-la dans Settings → Secrets and variables → Actions → Variables
-          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
         run: npm run build
 
       - name: Upload build artifacts

@@ -16,3 +16,12 @@
                 }
               ]
             }
+
+            {
+              "questions": [
+                {
+                  "content": "string",
+                  "reponses": [{"content", "isCorrect", "isSelected (à false par defaut)"}, {"content", "isCorrect", "isSelected (à false par defaut)"}, {"content", "isCorrect", "isSelected (à false par defaut)"}, {"content", "isCorrect", "isSelected (à false par defaut)"}],
+                }
+              ]
+            }

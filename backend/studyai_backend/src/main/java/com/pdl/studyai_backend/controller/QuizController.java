@@ -1,7 +1,8 @@
 package com.pdl.studyai_backend.controller;
 
-import java.util.Map;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pdl.studyai_backend.dto.QuizRequest;
 import com.pdl.studyai_backend.model.Question;
@@ -23,18 +24,27 @@ import com.pdl.studyai_backend.service.QuizService;
 import com.pdl.studyai_backend.service.StudioAiService;
 import com.pdl.studyai_backend.service.SubjectService;
 
-import jakarta.servlet.http.HttpServletRequest;
 import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
-@CrossOrigin(origins="http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3000")
 public class QuizController {
-    
+
     private final QuizService quizService;
     private final SubjectService subjectService;
     private final StudioAiService studioAiService;
+    private final String promptSample = "{\r\n" + //
+                "              \"questions\": [\r\n" + //
+                "                {\r\n" + //
+                "                  \"content\": \"string\",\r\n" + //
+                "                  \"reponses\": [{\"content\", \"isCorrect\", \"isSelected (à false par defaut)\"}, {\"content\", \"isCorrect\", \"isSelected (à false par defaut)\"}, {\"content\", \"isCorrect\", \"isSelected (à false par defaut)\"}, {\"content\", \"isCorrect\", \"isSelected (à false par defaut)\"}],\r\n" + //
+                "                }\r\n" + //
+                "              ]\r\n" + //
+                "            }";
     private final String promptHeader = "Génère un quiz au format JSON avec des questions, le nombre de reponse correcte sera aléatoire\n\n";
-    //constructor
+
+    // constructor
     public QuizController(QuizService quizService, SubjectService subjectService, StudioAiService studioAiService) {
         this.quizService = quizService;
         this.subjectService = subjectService;
@@ -52,9 +62,16 @@ public class QuizController {
             if (subject == null) {
                 return ResponseEntity.status(404).body("Sujet non trouvé");
             }
-            String generatedQuiz = this.studioAiService.ask(this.promptHeader + subject.getExtractText());
+            String generatedQuiz = this.studioAiService
+                    .ask(this.promptHeader + subject.getExtractText() + " sous ce format " + this.promptSample);
+            System.out.println("Generated Quiz: " + generatedQuiz);
+
+            String jsonOnly = extractJson(generatedQuiz);
             ObjectMapper mapper = new ObjectMapper();
-            List<Question> questions = mapper.readValue(generatedQuiz, new TypeReference<List<Question>>() {});
+            
+            JsonNode node = mapper.readTree(jsonOnly);
+            List<Question> questions = Arrays.asList(mapper.treeToValue(node.get("questions"), Question[].class));
+            
             Quiz q = new Quiz(reqQuiz.getSubjectId(), questions);
             Quiz quiz = this.quizService.create(q);
             return ResponseEntity.ok(Map.of("message", "Quiz créé avec succès !", "quiz", quiz));
@@ -77,7 +94,7 @@ public class QuizController {
         }
     }
 
-    @GetMapping("/quiz/subject/{subjectId}")  
+    @GetMapping("/quiz/subject/{subjectId}")
     public ResponseEntity<?> getQuizBySubjectId(@PathVariable String subjectId) {
         try {
             List<Quiz> quizzes = quizService.getQuizBySubjectId(subjectId);
@@ -133,4 +150,14 @@ public class QuizController {
             return ResponseEntity.status(500).body("Erreur interne : " + e.getMessage());
         }
     }
+
+    //Fonction utilitaire pour extraire le Json de la reponse de l'API
+    private String extractJson(String text) {
+    int start = text.indexOf("{");
+    int end = text.lastIndexOf("}");
+    if (start != -1 && end != -1 && end > start) {
+        return text.substring(start, end + 1).trim();
+    }
+    return text.trim(); // si jamais il n'y a pas de balises
+}
 }

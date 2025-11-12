@@ -1,12 +1,12 @@
 package com.pdl.studyai_backend.model;
 
-import org.springframework.data.annotation.Id;
+// import org.springframework.data.annotation.Id;
 import java.util.List;
 
 
 public class Question {
-    @Id
-    private String id;
+    // @Id
+    // private String id;
     private String content;
     private List<Reponse> reponses;
     public Question() {}
@@ -14,9 +14,9 @@ public class Question {
         this.content = content;
         this.reponses = reponses;
     }
-    public String getId() {
-        return id;
-    }
+    // public String getId() {
+    //     return id;
+    // }
     public String getContent() {
         return content;
     }

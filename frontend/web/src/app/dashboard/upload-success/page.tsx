@@ -14,11 +14,12 @@ function UploadSuccess() {
 
   const params = useSearchParams();
   const key = params.get('key') || '';
+  console.log("Key from params : ", key);
 
   const [sessName, setSessName] = useState<string>('');
   const [sessBlobUrl, setSessBlobUrl] = useState<string>('');
   const [sessText, setSessText] = useState<string>('');
-  const [meta, setMeta] = useState<PdfMeta | null>(null);               
+  const [meta, setMeta] = useState<PdfMeta | null>(null);
   const [showExtract, setShowExtract] = useState(false);
 
   useEffect(() => {
@@ -44,11 +45,24 @@ function UploadSuccess() {
     }
 
     //Lancer la création du subject une fois que le texte est chargé
-    if (text && text.trim().length > 0) {
-      const hasBeenCreated = sessionStorage.getItem(`subjectCreated:${key}`);
-      const userId = localStorage.getItem("userId") ;
 
-      if (!hasBeenCreated) {
+    // 
+    if (text && text.trim().length > 0) {
+      /**
+       * @marlenegohi 
+       * hasBeenCreated n'existe pas c'est pourquoi il cré à chaque fois un nouveau id pour les documents, il va falloir le géré.
+       * La logique à suivre est de faire un setItem avant de faire le getItem pour "subjectCreated"
+       * J'ai parcouru tout le code mais j'ai pas vu de "hasBeenCreated" ou de "subjectCreated" donc si tu peux revoir ça, ça sera cool.  
+       *  */
+      const hasBeenCreated = sessionStorage.getItem(`subjectCreated:${key}`);
+      console.log("hasBeenCreated : ", hasBeenCreated)
+      const userId = localStorage.getItem("userId");
+      /**
+       * @marlenegohi
+       * Ici j'ai changé le hasBeenCreated que t'avais pour vérifier avec le "key"
+       * En vrai, tu peux voir une autre approche pour le faire, j'ai juste tester ça, je te laisse la main pour le reste.
+       */
+      if (key === null) {
         (async () => {
           try {
             const res = await createSubject({
@@ -175,20 +189,20 @@ function UploadSuccess() {
           <h2 className="text-2xl text-gray-700">Commençons votre révision, choisissez une option :</h2>
 
           <div className="flex flex-wrap gap-6 justify-center mt-8">
-           
+
           </div>
 
           {/* barre d’actions concrètes avec la key */}
           {key && (
             <div className="mt-6 flex flex-wrap gap-3 justify-center">
-                 <Link rel="stylesheet" href={`/dashboard/resume?key=${key}`} >
+              <Link rel="stylesheet" href={`/dashboard/resume?key=${key}`} >
                 <OptionButton icon="/resume.png" label="Résumé" />
-                </Link>
-                <OptionButton icon="/chat.png" label="Chat" />
-                <Link rel="stylesheet" href="/dashboard/quiz">
-                 <OptionButton icon="/quizz.png" label="Quizz" />
-                 </Link>
-              
+              </Link>
+              <OptionButton icon="/chat.png" label="Chat" />
+              <Link rel="stylesheet" href="/dashboard/quiz">
+                <OptionButton icon="/quizz.png" label="Quizz" />
+              </Link>
+
               <a
                 href="/dashboard/upload"
                 className="rounded-full border-2 border-gray-300 px-6 py-2 text-gray-600 hover:bg-gray-50"
@@ -224,14 +238,14 @@ function UploadSuccess() {
 
               {showExtract && (
                 <pre className="mt-3 whitespace-pre-wrap text-sm leading-6 bg-white border rounded-lg p-3 text-gray-700">
-                    {extractPreview}{sessText.length > extractPreview.length ? '…' : ''}
+                  {extractPreview}{sessText.length > extractPreview.length ? '…' : ''}
                 </pre>
               )}
             </div>
           )}
         </div>
 
-       
+
       </main>
     </div>
   );

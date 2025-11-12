@@ -1,7 +1,7 @@
 export async function summarizeExtractText() {
 
   const subjectId = localStorage.getItem("SubjectId");
-  
+
   if (!subjectId) {
     console.error("Aucun Subject ID trouvé !");
     return;
@@ -17,7 +17,7 @@ export async function summarizeExtractText() {
       },
       body: JSON.stringify({ subjectId }),
     });
-
+    console.log("Response after fetch : ", response)
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);

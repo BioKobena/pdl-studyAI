@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.pdl.studyai_backend.dto.ResumeRequest;
 import com.pdl.studyai_backend.model.Resume;
 import com.pdl.studyai_backend.model.Subject;
-import com.pdl.studyai_backend.service.ResumeService;
+import com.pdl.studyai_backend .service.ResumeService;
 import com.pdl.studyai_backend.service.SubjectService;
 import com.pdl.studyai_backend.service.StudioAiService;
 

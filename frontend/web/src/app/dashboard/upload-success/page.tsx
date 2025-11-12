@@ -1,11 +1,11 @@
-'use client';
-import Link from 'next/link';
-import { useState, useEffect, useMemo } from 'react';
-import { FileText } from 'lucide-react';
+"use client";
+import Link from "next/link";
+import { useState, useEffect, useMemo } from "react";
+import { FileText } from "lucide-react";
 import OptionButton from "../../../component/ui/option-button";
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams } from "next/navigation";
 import { createSubject } from "@/lib/api/subject";
-import { withAuth } from '@/lib/api/withAuth.client';
+import { withAuth } from "@/lib/api/withAuth.client";
 type PdfMeta = { chars: number; ms?: number; pages?: number };
 
 function UploadSuccess() {
@@ -13,24 +13,22 @@ function UploadSuccess() {
   const [isDragging, setIsDragging] = useState(false);
 
   const params = useSearchParams();
-  const key = params.get('key') || '';
+  const key = params.get("key") || "";
 
-  const [sessName, setSessName] = useState<string>('');
-  const [sessBlobUrl, setSessBlobUrl] = useState<string>('');
-  const [sessText, setSessText] = useState<string>('');
-  const [meta, setMeta] = useState<PdfMeta | null>(null);               
+  const [sessName, setSessName] = useState<string>("");
+  const [sessText, setSessText] = useState<string>("");
+  const [meta, setMeta] = useState<PdfMeta | null>(null);
   const [showExtract, setShowExtract] = useState(false);
 
   useEffect(() => {
     if (!key) return;
 
     const name = sessionStorage.getItem(`pdfName:${key}`) || "";
-    const blob = sessionStorage.getItem(`pdfBlobUrl:${key}`) || "";
+    const blobUrl = sessionStorage.getItem(`pdfBlobUrl:${key}`) || "";
     const text = sessionStorage.getItem(`pdfText:${key}`) || "";
     const metaRaw = sessionStorage.getItem(`pdfMeta:${key}`);
 
     setSessName(name);
-    setSessBlobUrl(blob);
     setSessText(text);
 
     if (metaRaw) {
@@ -46,7 +44,7 @@ function UploadSuccess() {
     //Lancer la création du subject une fois que le texte est chargé
     if (text && text.trim().length > 0) {
       const hasBeenCreated = sessionStorage.getItem(`subjectCreated:${key}`);
-      const userId = localStorage.getItem("userId") ;
+      const userId = localStorage.getItem("userId");
 
       if (!hasBeenCreated) {
         (async () => {
@@ -66,12 +64,17 @@ function UploadSuccess() {
             } else {
               console.warn("Aucun ID trouvé dans la réponse :", res);
             }
-
           } catch (err: unknown) {
             if (err instanceof Error) {
-              console.error("Erreur lors de la création du subject :", err.message);
+              console.error(
+                "Erreur lors de la création du subject :",
+                err.message,
+              );
             } else {
-              console.error("Erreur lors de la création du subject :", String(err));
+              console.error(
+                "Erreur lors de la création du subject :",
+                String(err),
+              );
             }
           }
         })();
@@ -79,32 +82,41 @@ function UploadSuccess() {
     }
 
     return () => {
-      if (blob) URL.revokeObjectURL(blob);
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
   }, [key]);
 
-
-  const isScan = useMemo(() => key && sessText.trim().length === 0, [key, sessText]);
   const hasText = useMemo(() => sessText.trim().length > 0, [sessText]); // AJOUT
   const extractPreview = useMemo(() => sessText.slice(0, 1200), [sessText]); // AJOUT
 
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
-  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); setIsDragging(false);
+    e.preventDefault();
+    setIsDragging(false);
     const files = e.dataTransfer.files;
-    if (files.length > 0 && files[0].type === 'application/pdf') setUploadedFile(files[0]);
+    if (files.length > 0 && files[0].type === "application/pdf")
+      setUploadedFile(files[0]);
   };
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files; if (files && files.length > 0) setUploadedFile(files[0]);
+    const files = e.target.files;
+    if (files && files.length > 0) setUploadedFile(files[0]);
   };
 
   // AJOUT : télécharger le texte extrait en .txt
   const downloadTxt = () => {
-    const blob = new Blob([sessText], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([sessText], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = (sessName || 'document') + '.txt'; a.click();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = (sessName || "document") + ".txt";
+    a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -117,7 +129,7 @@ function UploadSuccess() {
 
         {/* Upload Area */}
         <div
-          className={`mb-10 border-2 rounded-lg p-8 transition-colors ${isDragging ? 'border-[#3FA9D9] bg-blue-50' : ' bg-white'}`}
+          className={`mb-10 border-2 rounded-lg p-8 transition-colors ${isDragging ? "border-[#3FA9D9] bg-blue-50" : " bg-white"}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -129,7 +141,9 @@ function UploadSuccess() {
                   <div className="flex-1 flex items-center justify-center">
                     <FileText className="w-12 h-12 text-[#c94a4a]" />
                   </div>
-                  <div className="bg-[#c94a4a] w-full py-2 text-white text-center">PDF</div>
+                  <div className="bg-[#c94a4a] w-full py-2 text-white text-center">
+                    PDF
+                  </div>
                 </div>
               </div>
             </div>
@@ -149,46 +163,52 @@ function UploadSuccess() {
             )}
 
             {key && sessName && (
-              <p className="text-[#8b0000] mt-2">Fichier : <b>{sessName}</b></p>
+              <p className="text-[#8b0000] mt-2">
+                Fichier : <b>{sessName}</b>
+              </p>
             )}
           </div>
         </div>
 
         {/* Confirmation d’extraction */}
-        {key && (
-          hasText ? (
+        {key &&
+          (hasText ? (
             <div className="mb-6 inline-flex flex-wrap items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
               <span>✓ PDF analysé</span>
-              <span>• {(meta?.chars ?? sessText.length).toLocaleString()} caractères</span>
-              {typeof meta?.pages === 'number' && <span>• {meta.pages} pages</span>}
-              {typeof meta?.ms === 'number' && <span>• {meta.ms} ms</span>}
+              <span>
+                • {(meta?.chars ?? sessText.length).toLocaleString()} caractères
+              </span>
+              {typeof meta?.pages === "number" && (
+                <span>• {meta.pages} pages</span>
+              )}
+              {typeof meta?.ms === "number" && <span>• {meta.ms} ms</span>}
             </div>
           ) : (
             <div className="mb-6 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-              Aucun texte extrait — ce PDF semble être un scan (image). Importez une version texte ou activez un OCR côté serveur.
+              Aucun texte extrait — ce PDF semble être un scan (image). Importez
+              une version texte ou activez un OCR côté serveur.
             </div>
-          )
-        )}
+          ))}
 
         {/* Options Section */}
         <div className="flex flex-col items-center justify-center min-h-screenspace-y-6">
-          <h2 className="text-2xl text-gray-700">Commençons votre révision, choisissez une option :</h2>
+          <h2 className="text-2xl text-gray-700">
+            Commençons votre révision, choisissez une option :
+          </h2>
 
-          <div className="flex flex-wrap gap-6 justify-center mt-8">
-           
-          </div>
+          <div className="flex flex-wrap gap-6 justify-center mt-8"></div>
 
           {/* barre d’actions concrètes avec la key */}
           {key && (
             <div className="mt-6 flex flex-wrap gap-3 justify-center">
-                 <Link rel="stylesheet" href={`/dashboard/resume?key=${key}`} >
+              <Link rel="stylesheet" href={`/dashboard/resume?key=${key}`}>
                 <OptionButton icon="/resume.png" label="Résumé" />
-                </Link>
-                <OptionButton icon="/chat.png" label="Chat" />
-                <Link rel="stylesheet" href="/dashboard/quiz">
-                 <OptionButton icon="/quizz.png" label="Quizz" />
-                 </Link>
-              
+              </Link>
+              <OptionButton icon="/chat.png" label="Chat" />
+              <Link rel="stylesheet" href="/dashboard/quiz">
+                <OptionButton icon="/quizz.png" label="Quizz" />
+              </Link>
+
               <a
                 href="/dashboard/upload"
                 className="rounded-full border-2 border-gray-300 px-6 py-2 text-gray-600 hover:bg-gray-50"
@@ -203,10 +223,10 @@ function UploadSuccess() {
             <div className="mt-6 w-full max-w-2xl">
               <div className="flex flex-wrap gap-3">
                 <button
-                  onClick={() => setShowExtract(s => !s)}
+                  onClick={() => setShowExtract((s) => !s)}
                   className="rounded-full border-2 border-[#7CB6DB] text-[#7CB6DB] px-4 py-1.5 hover:bg-[#E8F6FF]"
                 >
-                  {showExtract ? 'Masquer l’extrait' : 'Voir un extrait'}
+                  {showExtract ? "Masquer l’extrait" : "Voir un extrait"}
                 </button>
                 <button
                   onClick={() => navigator.clipboard.writeText(sessText)}
@@ -224,14 +244,13 @@ function UploadSuccess() {
 
               {showExtract && (
                 <pre className="mt-3 whitespace-pre-wrap text-sm leading-6 bg-white border rounded-lg p-3 text-gray-700">
-                    {extractPreview}{sessText.length > extractPreview.length ? '…' : ''}
+                  {extractPreview}
+                  {sessText.length > extractPreview.length ? "…" : ""}
                 </pre>
               )}
             </div>
           )}
         </div>
-
-       
       </main>
     </div>
   );

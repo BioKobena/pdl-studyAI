@@ -27,7 +27,7 @@ export function withAuth<P extends object>(Comp: React.ComponentType<P>) {
       if (!token) {
         // On garde la page demandée pour y revenir après le login
         // window.location.pathname = "/resume" par ex.
-        
+
         // Redirection côté client
 
         router.replace(`/authentication/login`);

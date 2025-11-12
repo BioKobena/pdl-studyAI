@@ -9,7 +9,7 @@ import { Mail } from "lucide-react";
 import PasswordInput from "@/component/ui/password-input";
 import {
   login,
- // type LoginRequest,
+  // type LoginRequest,
   type LoginSuccess,
   // type LoginError,
 } from "@/lib/api/auth";
@@ -31,24 +31,24 @@ export default function LoginPage() {
     )?.value;
 
     try {
-    const res = await login({ email, password }); // le type de retour de `login` doit être typé
-    const u = res as LoginSuccess;                // idéalement: tape `login` pour éviter ce cast
+      const res = await login({ email, password }); // le type de retour de `login` doit être typé
+      const u = res as LoginSuccess; // idéalement: tape `login` pour éviter ce cast
 
-    saveUser({ id: u.id, email: u.email, fullName: u.fullName });
-    router.push("/dashboard/upload");
-  } catch (e: unknown) {
-    const message =
-      e instanceof Error
-        ? e.message
-        : typeof e === "string"
-        ? e
-        : "Erreur réseau/serveur";
+      saveUser({ id: u.id, email: u.email, fullName: u.fullName });
+      router.push("/dashboard/upload");
+    } catch (e: unknown) {
+      const message =
+        e instanceof Error
+          ? e.message
+          : typeof e === "string"
+            ? e
+            : "Erreur réseau/serveur";
 
-    setErr(message);
-  } finally {
-    setLoading(false);
-  }
-};
+      setErr(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div>

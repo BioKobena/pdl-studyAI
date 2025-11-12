@@ -58,7 +58,7 @@ export default function VerifyEmail() {
     if (!pasted) return;
     e.preventDefault();
     const arr = pasted.split("");
-     const next = ["", "", "", ""];
+    const next = ["", "", "", ""];
     for (let i = 0; i < Math.min(arr.length, 4); i++) next[i] = arr[i];
     setCode(next);
     inputsRef.current[Math.min(arr.length, 4) - 1]?.focus();

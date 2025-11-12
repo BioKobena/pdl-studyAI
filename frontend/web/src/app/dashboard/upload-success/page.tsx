@@ -86,7 +86,6 @@ function UploadSuccess() {
     };
   }, [key]);
 
-  
   const hasText = useMemo(() => sessText.trim().length > 0, [sessText]); // AJOUT
   const extractPreview = useMemo(() => sessText.slice(0, 1200), [sessText]); // AJOUT
 

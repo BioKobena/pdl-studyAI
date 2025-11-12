@@ -5,10 +5,10 @@ import { FileText } from 'lucide-react';
 import OptionButton from "../../../component/ui/option-button";
 import { useSearchParams } from 'next/navigation';
 import { createSubject } from "@/lib/api/subject";
-
+import { withAuth } from '@/lib/api/withAuth.client';
 type PdfMeta = { chars: number; ms?: number; pages?: number };
 
-export default function UploadSuccess() {
+function UploadSuccess() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -51,15 +51,22 @@ export default function UploadSuccess() {
       if (!hasBeenCreated) {
         (async () => {
           try {
-
             const res = await createSubject({
               userId: userId,
               title: name || "Document sans titre",
               extractText: text,
             });
+
             console.log("Sujet créé :", res);
-            sessionStorage.setItem(`subjectCreated:${key}`, "true");
-            sessionStorage.setItem(`subjectId:${key}`, res.id || ""); // si ton API renvoie un id
+
+            const subjectId = res?.subject?.id;
+            if (subjectId) {
+              localStorage.setItem("SubjectId", subjectId);
+              console.log("Subject ID sauvegardé :", subjectId);
+            } else {
+              console.warn("Aucun ID trouvé dans la réponse :", res);
+            }
+
           } catch (err: unknown) {
             if (err instanceof Error) {
               console.error("Erreur lors de la création du subject :", err.message);
@@ -67,7 +74,6 @@ export default function UploadSuccess() {
               console.error("Erreur lors de la création du subject :", String(err));
             }
           }
-
         })();
       }
     }
@@ -230,3 +236,4 @@ export default function UploadSuccess() {
     </div>
   );
 }
+export default withAuth(UploadSuccess);

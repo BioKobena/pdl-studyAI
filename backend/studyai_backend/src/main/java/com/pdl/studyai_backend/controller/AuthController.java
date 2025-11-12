@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,7 +15,6 @@ import com.pdl.studyai_backend.dto.LoginRequest;
 import com.pdl.studyai_backend.dto.SignupRequest;
 import com.pdl.studyai_backend.model.User;
 import com.pdl.studyai_backend.service.UserService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.pdl.studyai_backend.service.security.JwtUtil;
 
 import io.swagger.v3.oas.annotations.Operation;

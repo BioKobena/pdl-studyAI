@@ -10,6 +10,8 @@ export type CurrentUser = {
 export function saveUser(user: CurrentUser) {
   if (typeof window === "undefined") return;
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+  if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+  else localStorage.removeItem(USER_KEY);
 }
 
 export function getUser(): CurrentUser | null {

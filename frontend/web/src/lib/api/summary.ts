@@ -11,7 +11,7 @@ export async function summarizeExtractText() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("auth_token")}`,
+        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
       body: JSON.stringify({ subjectId }),
     });
@@ -23,7 +23,6 @@ export async function summarizeExtractText() {
     const summary = await response.json();
     console.log("Résumé :", summary);
     return summary;
-
   } catch (err: unknown) {
     if (err instanceof Error) console.error("Erreur résumé :", err.message);
     else console.error("Erreur résumé :", String(err));

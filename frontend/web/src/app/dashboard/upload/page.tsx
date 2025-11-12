@@ -1,50 +1,49 @@
-'use client';
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import React from "react";
-import FileUpload, {DropZone, FileError, FileList, FileInfo, FileProgress} from "@/component/ui/file-uploader";
+import FileUpload, {
+  DropZone,
+  FileError,
+  FileList,
+  FileInfo,
+  FileProgress,
+} from "@/component/ui/file-uploader";
 import { FileText, MessageCircle, GraduationCap } from "lucide-react";
 import { HoverEffect } from "@/component/ui/hover-effect";
-import {InteractiveHoverButton} from "@/component/ui/interactive-button"
+import { InteractiveHoverButton } from "@/component/ui/interactive-button";
 import { useRouter } from "next/navigation";
 import { withAuth } from "@/lib/api/withAuth.client";
 
+// extraction PDF typée depuis lib
+import { extractPdfTextFromFile } from "@/lib/pdf";
 
-// ---------- AJOUT: aide extraction PDF (pdfjs-dist) + nettoyage ----------
-async function extractPdfTextFromFile(file: File): Promise<string> {
+type BlobLike = { arrayBuffer: () => Promise<ArrayBuffer> };
 
-  // import dynamique pour ne charger pdfjs-dist que quand on en a besoin
-  const pdfjsLib: any = await import('pdfjs-dist');
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-
-  const buffer = await file.arrayBuffer();
-  const doc = await pdfjsLib.getDocument({ data: buffer }).promise;
-
-  let text = '';
-  for (let p = 1; p <= doc.numPages; p++) {
-    const page = await doc.getPage(p);
-    const content = await page.getTextContent();
-    const pageText = content.items.map((it: any) => ('str' in it ? it.str : '')).join(' ');
-    text += pageText + '\n\n';
+function pickProp<T>(obj: unknown, key: string): T | undefined {
+  if (obj && typeof obj === "object" && key in obj) {
+    return (obj as Record<string, unknown>)[key] as T;
   }
-  await doc.destroy();
-  return cleanPdfText(text);
+  return undefined;
 }
 
-function cleanPdfText(raw: string): string {
-  return raw
-    .replace(/-\s*\n/g, '')        // recoller les mots coupés
-    .replace(/\s+\n/g, '\n')       // espaces avant saut de ligne
-    .replace(/\n{3,}/g, '\n\n')    // sauts de ligne excessifs
-    .replace(/[ \t]{2,}/g, ' ')    // espaces multiples
-    .trim();
-}
-
-// Récupère le File natif depuis FileInfo (adapte si ton composant expose un autre champ)
+// Récupère File/Blob en évitant any
 function getNativeFile(fi: FileInfo): File | null {
-  // essais courants: fi.file, fi.blob, fi.nativeFile, fi.originalFile
-  const cand: any = (fi as any).file ?? (fi as any).blob ?? (fi as any).nativeFile ?? (fi as any).originalFile;
-  return (cand && typeof cand.arrayBuffer === 'function') ? cand as File : null;
+  const maybe =
+    pickProp<File | Blob>(fi, "file") ??
+    pickProp<File | Blob>(fi, "blob") ??
+    pickProp<File | Blob>(fi, "nativeFile") ??
+    pickProp<File | Blob>(fi, "originalFile");
+
+  return maybe && typeof (maybe as BlobLike).arrayBuffer === "function"
+    ? (maybe as File)
+    : null;
+}
+
+// Essaie d'obtenir un nom depuis FileInfo si exposé par ton composant
+function getFileInfoName(fi: FileInfo): string | undefined {
+  const n = pickProp<unknown>(fi, "name");
+  return typeof n === "string" ? n : undefined;
 }
 
 const projects = [
@@ -68,13 +67,13 @@ const projects = [
   },
 ];
 
- function UploadFiles() {
+function UploadFiles() {
   const router = useRouter();
 
   const [uploadFiles, setUploadFiles] = useState<FileInfo[]>([]);
-  const [loading, setLoading] = useState(false);               // AJOUT
-  const [errMsg, setErrMsg] = useState<string | null>(null);   // AJOUT
-  const processingRef = useRef(false);                         // AJOUT: évite double-traitement
+  const [loading, setLoading] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
+  const processingRef = useRef(false); // évite double-traitement
 
   const onFileSelectChange = (files: FileInfo[]) => {
     setUploadFiles(files);
@@ -84,25 +83,22 @@ const projects = [
     setUploadFiles(uploadFiles.filter((file) => file.id !== fileId));
   };
 
-  const getFileIcon = (type: string) => {
-    if (type === "pdf") return "text-red-500";
-    else if (type === "docx" || type === "doc") return "text-blue-500";
-    else return "text-gray-500";
-  };
-
-  //Déclenchement auto dès qu’un fichier est choisi 
+  // Déclenchement auto dès qu’un fichier est choisi
   useEffect(() => {
     if (processingRef.current) return;
     if (!uploadFiles || uploadFiles.length === 0) return;
 
     const first = uploadFiles[0];
     const file = getNativeFile(first);
-    const name = (first as any).name ?? (file?.name ?? 'document.pdf');
+    const name = getFileInfoName(first) ?? file?.name ?? "document.pdf";
 
-    const isPdf = name.toLowerCase().endsWith('.pdf') || (file?.type === 'application/pdf');
+    const isPdf =
+      name.toLowerCase().endsWith(".pdf") || file?.type === "application/pdf";
 
     if (!isPdf) {
-      setErrMsg("L’extraction locale est disponible pour les PDF. Vous pouvez importer une version PDF texte.");
+      setErrMsg(
+        "L’extraction locale est disponible pour les PDF. Vous pouvez importer une version PDF texte.",
+      );
       return;
     }
 
@@ -113,7 +109,9 @@ const projects = [
     (async () => {
       try {
         if (!file) {
-          throw new Error("Fichier introuvable dans FileInfo. Adapte getNativeFile(...) selon ton composant.");
+          throw new Error(
+            "Fichier introuvable dans FileInfo. Adapte getNativeFile(...) selon ton composant.",
+          );
         }
 
         // 1) Blob URL locale pour prévisualiser sans envoyer le fichier au serveur
@@ -130,9 +128,11 @@ const projects = [
 
         // 4) Redirection vers la page d’actions
         router.push(`/dashboard/upload-success?key=${key}`);
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error(e);
-        setErrMsg("Échec de l’analyse du PDF. Essayez un autre fichier (PDF texte non scanné).");
+        setErrMsg(
+          "Échec de l’analyse du PDF. Essayez un autre fichier (PDF texte non scanné).",
+        );
         setLoading(false);
         processingRef.current = false;
       }
@@ -142,7 +142,7 @@ const projects = [
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 container mx-auto px-4 max-w-4xl">
-        {/* ---------- AJOUT: overlay loader “soft” ---------- */}
+        {/* overlay loader “soft” */}
         {loading && (
           <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3">
@@ -182,7 +182,7 @@ const projects = [
                 onRemove={onRemove}
                 canResume={true}
               />
-              {/* Message d'erreur lorsque le fichier n'est pas pas pdf*/}
+              {/* Message d'erreur lorsque le fichier n'est pas pdf */}
               {errMsg && <p className="text-sm text-amber-600">{errMsg}</p>}
             </div>
           </FileUpload>
@@ -195,17 +195,21 @@ const projects = [
           </h2>
         </div>
 
-        {/* Cards section insérée ici */}
+        {/* Cards section */}
         <div className="mb-1">
           <div className="max-w-5xl mx-auto px-8">
             <HoverEffect items={projects} />
           </div>
         </div>
-        <div className="flex justify-end ml-4" >
-          <InteractiveHoverButton text="Commencer" href="/dashboard/upload-success"/>
+        <div className="flex justify-end ml-4">
+          <InteractiveHoverButton
+            text="Commencer"
+            href="/dashboard/upload-success"
+          />
         </div>
       </main>
     </div>
   );
 }
+
 export default withAuth(UploadFiles);

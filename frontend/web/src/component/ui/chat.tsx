@@ -1,30 +1,37 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, X, Loader2 } from "lucide-react";
+import { Send, Sparkles, Loader2 } from "lucide-react";
 
 const AIMessageBar = () => {
   const [input, setInput] = useState<string>("");
-  const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>([]);
+  const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>(
+    [],
+  );
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState<boolean>(false);
 
-  
   // Simulate AI typing effect
   const simulateResponse = (userMessage: string) => {
     setIsTyping(true);
-    
+
     // Simulate different responses based on input
     let response = "Hi there! I'm your AI assistant. How can I help you today?";
-    if (userMessage.toLowerCase().includes("hello") || userMessage.toLowerCase().includes("hi")) {
-      response = "Hello! I'm your friendly AI assistant. What can I do for you?";
+    if (
+      userMessage.toLowerCase().includes("hello") ||
+      userMessage.toLowerCase().includes("hi")
+    ) {
+      response =
+        "Hello! I'm your friendly AI assistant. What can I do for you?";
     } else if (userMessage.toLowerCase().includes("help")) {
-      response = "I'm here to help! You can ask me questions, request information, or just chat.";
+      response =
+        "I'm here to help! You can ask me questions, request information, or just chat.";
     } else if (userMessage.toLowerCase().includes("thank")) {
       response = "You're welcome! Is there anything else you'd like to know?";
     } else if (userMessage.toLowerCase().includes("who are you")) {
-      response = "I'm an AI assistant designed to be helpful, harmless, and honest!";
+      response =
+        "I'm an AI assistant designed to be helpful, harmless, and honest!";
     }
-    
+
     setTimeout(() => {
       setIsTyping(false);
       setMessages((prev) => [...prev, { text: response, isUser: false }]);
@@ -33,20 +40,17 @@ const AIMessageBar = () => {
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    
+
     if (input.trim() === "") return;
-    
+
     const userMessage = input;
     setMessages((prev) => [...prev, { text: userMessage, isUser: true }]);
     setInput("");
-    
+
     simulateResponse(userMessage);
   };
 
-  const clearChat = () => {
-    setMessages([]);
-  };
-
+  
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -55,14 +59,15 @@ const AIMessageBar = () => {
   return (
     <div className="w-full  mx-auto h-[600px] bg-gradient-to-br from-slate-300 to-blue-850 rounded-xl overflow-hidden shadow-2xl border border-blue-300/20">
       {/* Header */}
-      
-      
+
       {/* Messages container */}
       <div className="p-4 h-[calc(100%-132px)] overflow-y-auto bg-slate-100/50">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <Sparkles className="h-12 w-12 text-[#3FA9D9] mb-4" />
-            <h3 className="text-[#3FA9D9] text-xl mb-2">How can I help you today?</h3>
+            <h3 className="text-[#3FA9D9] text-xl mb-2">
+              How can I help you today?
+            </h3>
             <p className="text-slate-400 text-sm max-w-xs">
               Ask me anything and I&apos;ll do my best to assist you!
             </p>
@@ -100,11 +105,11 @@ const AIMessageBar = () => {
           </div>
         )}
       </div>
-      
+
       {/* Input form */}
-      <form 
+      <form
         onSubmit={handleSubmit}
-        className={`p-4 border-t ${isFocused ? 'border-blue-500/70 bg-slate-500/80' : 'border-slate-700/50 bg-[#3FA9D9]'} transition-colors duration-200`}
+        className={`p-4 border-t ${isFocused ? "border-blue-500/70 bg-slate-500/80" : "border-slate-700/50 bg-[#3FA9D9]"} transition-colors duration-200`}
       >
         <div className="relative flex items-center">
           <input
@@ -133,7 +138,7 @@ const AIMessageBar = () => {
           </button>
         </div>
       </form>
-      
+
       <style>
         {`
         @keyframes fade-in {

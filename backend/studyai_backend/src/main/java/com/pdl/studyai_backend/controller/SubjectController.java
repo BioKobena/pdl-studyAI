@@ -123,12 +123,27 @@ public class SubjectController {
         }
     }
     
-    @GetMapping("/quiz/{subjectId}")
+    @GetMapping("/{subjectId}/quiz")
     public ResponseEntity<?> getQuizzesBySubjectId(@PathVariable String subjectId) {
         try {
             Quiz quiz = this.quizService.getActiveQuizBySubjectId(subjectId);
             if (quiz != null) {
                 return ResponseEntity.ok(quiz);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur interne : " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{subjectId}/chat")
+    public ResponseEntity<?> getChatBySubjectId(@PathVariable String subjectId) {
+        try {
+            Subject subject = this.subjectService.getSubjectById(subjectId).orElse(null);
+            if (subject != null) {
+                // TODO: Implement Chat retrieval logic
+                return ResponseEntity.ok(Map.of("message", "Chat trouvé"));
             } else {
                 return ResponseEntity.notFound().build();
             }

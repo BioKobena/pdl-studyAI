@@ -16,6 +16,7 @@ export async function summarizeExtractText() {
       },
       body: JSON.stringify({ subjectId }),
     });
+    console.log("Response after fetch : ", response)
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);

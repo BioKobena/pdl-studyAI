@@ -6,6 +6,7 @@ import OptionButton from "../../../component/ui/option-button";
 import { useSearchParams } from "next/navigation";
 import { createSubject } from "@/lib/api/subject";
 import { withAuth } from "@/lib/api/withAuth.client";
+// import { main } from "framer-motion/client";
 type PdfMeta = { chars: number; ms?: number; pages?: number };
 
 function UploadSuccess() {
@@ -13,12 +14,11 @@ function UploadSuccess() {
   const [isDragging, setIsDragging] = useState(false);
 
   const params = useSearchParams();
-  const key = params.get('key') || '';
+  const key = params.get("key") || "";
 
-  const [sessName, setSessName] = useState<string>('');
-  const [sessBlobUrl, setSessBlobUrl] = useState<string>('');
-  const [sessText, setSessText] = useState<string>('');
-  const [meta, setMeta] = useState<PdfMeta | null>(null);               
+  const [sessName, setSessName] = useState<string>("");
+  const [sessText, setSessText] = useState<string>("");
+  const [meta, setMeta] = useState<PdfMeta | null>(null);
   const [showExtract, setShowExtract] = useState(false);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ function UploadSuccess() {
        * J'ai parcouru tout le code mais j'ai pas vu de "hasBeenCreated" ou de "subjectCreated" donc si tu peux revoir ça, ça sera cool.  
        *  */
       const hasBeenCreated = sessionStorage.getItem(`subjectCreated:${key}`);
-      const userId = localStorage.getItem("userId") ;
+      const userId = localStorage.getItem("userId");
 
       if (!hasBeenCreated) {
         (async () => {
@@ -205,14 +205,12 @@ function UploadSuccess() {
             Commençons votre révision, choisissez une option :
           </h2>
 
-          <div className="flex flex-wrap gap-6 justify-center mt-8">
-           
-          </div>
+          <div className="flex flex-wrap gap-6 justify-center mt-8"></div>
 
           {/* barre d’actions concrètes avec la key */}
           {key && (
-            <div className="mt-6 flex flex-wrap gap-3 justify-center">
-                 <Link rel="stylesheet" href={`/dashboard/resume?key=${key}`} >
+            <><div className="mt-6 flex flex-wrap gap-3 justify-center">
+              <Link rel="stylesheet" href={`/dashboard/resume?key=${key}`}>
                 <OptionButton icon="/resume.png" label="Résumé" />
               </Link>
               <OptionButton icon="/chat.png" label="Chat" />
@@ -220,12 +218,14 @@ function UploadSuccess() {
                 <OptionButton icon="/quizz.png" label="Quizz" />
               </Link>
 
-              <a
+            </Link><OptionButton icon="/chat.png" label="Chat" /><Link rel="stylesheet" href="/dashboard/quiz">
+                <OptionButton icon="/quizz.png" label="Quizz" />
+              </Link><a
                 href="/dashboard/upload"
                 className="rounded-full border-2 border-gray-300 px-6 py-2 text-gray-600 hover:bg-gray-50"
               >
                 Changer de fichier
-              </a>
+              </a></>
             </div>
           )}
 
@@ -255,14 +255,13 @@ function UploadSuccess() {
 
               {showExtract && (
                 <pre className="mt-3 whitespace-pre-wrap text-sm leading-6 bg-white border rounded-lg p-3 text-gray-700">
-                    {extractPreview}{sessText.length > extractPreview.length ? '…' : ''}
+                  {extractPreview}
+                  {sessText.length > extractPreview.length ? "…" : ""}
                 </pre>
               )}
             </div>
           )}
         </div>
-
-       
       </main>
     </div>
   );

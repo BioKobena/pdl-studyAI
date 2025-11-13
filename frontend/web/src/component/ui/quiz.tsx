@@ -69,106 +69,166 @@ interface Question {
   id: number;
   question: string;
   options: string[];
-  correctAnswer: number;
+  correctAnswers: number[]; // Tableau d'indices des réponses correctes
+  userAnswers: number[]; // Tableau d'indices des réponses sélectionnées par l'utilisateur
 }
 
-/* ---------- Mock (remplace par fetch API plus tard) ---------- */
-const localQuiz: Question[] = [
-  {
-    id: 1,
-    question: "Which planet is known as the 'Red Planet'?",
-    options: ["Venus", "Mars", "Jupiter", "Saturn"],
-    correctAnswer: 1,
-  },
-  {
-    id: 2,
-    question: "What is the largest mammal in the world?",
-    options: ["African Elephant", "Blue Whale", "Giraffe", "Polar Bear"],
-    correctAnswer: 1,
-  },
-  {
-    id: 3,
-    question: "Which element has the chemical symbol 'Au'?",
-    options: ["Silver", "Aluminum", "Gold", "Argon"],
-    correctAnswer: 2,
-  },
-  {
-    id: 4,
-    question: "How many bones are there in an adult human body?",
-    options: ["186", "206", "226", "246"],
-    correctAnswer: 1,
-  },
-  {
-    id: 5,
-    question: "What is the speed of light in a vacuum?",
-    options: [
-      "299,792,458 m/s",
-      "300,000,000 m/s",
-      "186,000 miles/s",
-      "All of the above",
-    ],
-    correctAnswer: 0,
-  },
-  // Ajoute autant de questions que tu veux pour tester >5
-  {
-    id: 6,
-    question: "The tallest mountain on Earth is?",
-    options: ["K2", "Everest", "Kilimanjaro", "Denali"],
-    correctAnswer: 1,
-  },
-  {
-    id: 7,
-    question: "H2O is the chemical formula for?",
-    options: ["Hydrogen", "Oxygen", "Water", "Salt"],
-    correctAnswer: 2,
-  },
-];
+interface BackendQuestion {
+  id?: number;
+  content: string;
+  reponses: {
+    content: string;
+    isCorrect: boolean;
+    isSelected: boolean;
+  }[];
+}
+
+interface BackendQuiz {
+  id: string;
+  subjectId: string;
+  questions: BackendQuestion[];
+}
+
+interface QuizResponse {
+  message: string;
+  quiz: BackendQuiz;
+}
+
 
 interface QuizService {
   loadQuiz(): Promise<Question[]>;
 }
-const mockQuizService: QuizService = {
+
+// Fonction pour transformer les données du backend vers le format frontend
+function transformBackendToFrontend(backendQuiz: BackendQuiz): Question[] {
+  if (!backendQuiz || !backendQuiz.questions) {
+    throw new Error("Invalid quiz data from backend");
+  }
+
+  console.log("Backend quiz questions:", backendQuiz.questions);
+  console.log("Number of questions from backend:", backendQuiz.questions.length);
+
+  return backendQuiz.questions.map((q, index) => {
+    // Récupérer tous les indices des réponses correctes
+    const correctIndices = q.reponses
+      .map((reponse, idx) => reponse.isCorrect ? idx : -1)
+      .filter(idx => idx !== -1);
+
+    console.log(`Question ${index + 1}:`, {
+      content: q.content,
+      reponses: q.reponses,
+      correctIndices: correctIndices
+    });
+
+    return {
+      id: q.id || index + 1,
+      question: q.content,
+      options: q.reponses.map(r => r.content),
+      correctAnswers: correctIndices.length > 0 ? correctIndices : [0], // Fallback à la première réponse si aucune correcte
+      userAnswers: []
+    };
+  });
+}
+
+// Service API avec intégration backend
+const apiQuizService: QuizService = {
   async loadQuiz() {
-    await new Promise((r) => setTimeout(r, 300));
-    return localQuiz;
-  },
+    const subjectId = localStorage.getItem("SubjectId");
+    
+    if (!subjectId) {
+      console.warn("No SubjectId found in localStorage");
+      throw new Error("Aucun sujet sélectionné. Veuillez sélectionner un sujet d'abord.");
+    }
+
+    const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+    
+    try {
+      const response = await fetch(`${base}/quiz/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify({ subjectId }),
+      });
+
+      console.log("Response status:", response.status);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Quiz introuvable pour ce sujet");
+        } else if (response.status === 401) {
+          throw new Error("Authentification requise");
+        } else {
+          throw new Error(`Erreur API: ${response.status}`);
+        }
+      }
+
+      const data: QuizResponse = await response.json();
+      console.log("Quiz created:", data);
+
+      if (!data.quiz) {
+        throw new Error("Aucun quiz trouvé dans la réponse");
+      }
+
+      const transformedQuestions = transformBackendToFrontend(data.quiz);
+      console.log("Transformed questions:", transformedQuestions);
+      console.log("Number of transformed questions:", transformedQuestions.length);
+
+      return transformedQuestions;
+    } catch (error) {
+      console.error("Failed to load quiz from API:", error);
+      if (error instanceof Error) {
+        throw error; // Propager l'erreur originale
+      } else {
+        throw new Error("Erreur lors du chargement du quiz");
+      }
+    }
+  }
 };
-// // Quand l’API sera prête :
-// const apiQuizService: QuizService = { async loadQuiz() {
-//   const res = await fetch("/api/quiz", { cache: "no-store" })
-//   if (!res.ok) throw new Error("Failed to load quiz")
-//   return (await res.json()) as Question[]
-// }}
 
 /* ---------- UI Component ---------- */
 export function Component() {
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [answers, setAnswers] = useState<(number | null)[]>([]);
+  const [selectedAnswers, setSelectedAnswers] = useState<number[][]>([]);
   const [quizCompleted, setQuizCompleted] = useState(false);
 
-  // ref pour auto-centre l’indicateur courant
+  // ref pour auto-centre l'indicateur courant
   const tabsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let alive = true;
-    mockQuizService
+    setLoading(true);
+    
+    apiQuizService
       .loadQuiz()
       .then((qs) => {
         if (!alive) return;
         setQuestions(qs);
-        setAnswers(Array(qs.length).fill(null));
+        // Correction : initialiser avec un tableau de tableaux vides
+        setSelectedAnswers(Array(qs.length).fill([]));
+        setError(null);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "Unknown error"));
+      .catch((e) => {
+        if (!alive) return;
+        setError(e instanceof Error ? e.message : "Erreur inconnue");
+        setQuestions(null);
+      })
+      .finally(() => {
+        if (!alive) return;
+        setLoading(false);
+      });
+      
     return () => {
       alive = false;
     };
   }, []);
 
-  // centre l’item courant s’il y a overflow
+  // centre l'item courant s'il y a overflow
   useEffect(() => {
     const el = tabsRef.current;
     if (!el) return;
@@ -182,41 +242,30 @@ export function Component() {
     }
   }, [currentQuestion, questions]);
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700">
-          Failed to load quiz: {error}
-        </div>
-      </div>
-    );
-  }
-  if (!questions) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex items-center gap-3 text-slate-600">
-          <div className="h-6 w-6 rounded-full border-2 border-slate-400 border-t-transparent animate-spin" />
-          <span>Loading quiz…</span>
-        </div>
-      </div>
-    );
-  }
-
-  const total = questions.length;
-  const answeredCount = answers.filter((a) => a !== null).length;
-
   const handleAnswerSelect = (answerIndex: number) => {
-    setSelectedAnswer(answerIndex);
-    const copy = [...answers];
-    copy[currentQuestion] = answerIndex;
-    setAnswers(copy);
+    if (!questions) return;
+
+    const currentAnswers = [...selectedAnswers];
+    // Pour un QCM simple, on remplace la sélection précédente
+    currentAnswers[currentQuestion] = [answerIndex];
+    
+    setSelectedAnswers(currentAnswers);
+
+    // Mettre à jour les userAnswers dans la question
+    const updatedQuestions = questions.map((q, index) => 
+      index === currentQuestion 
+        ? { ...q, userAnswers: [answerIndex] }
+        : q
+    );
+    setQuestions(updatedQuestions);
   };
 
   const handleNext = () => {
-    if (currentQuestion < total - 1) {
+    if (!questions) return;
+    
+    if (currentQuestion < questions.length - 1) {
       const next = currentQuestion + 1;
       setCurrentQuestion(next);
-      setSelectedAnswer(answers[next]);
     } else {
       setQuizCompleted(true);
     }
@@ -226,46 +275,109 @@ export function Component() {
     if (currentQuestion === 0) return;
     const prev = currentQuestion - 1;
     setCurrentQuestion(prev);
-    setSelectedAnswer(answers[prev]);
   };
 
-  const calculateScore = (): number =>
-    answers.reduce<number>(
-      (acc, ans, i) =>
-        ans !== null && ans === questions[i].correctAnswer ? acc + 1 : acc,
-      0,
+  const calculateScore = (): number => {
+    if (!questions) return 0;
+
+    return questions.reduce((score, question, index) => {
+      const userAnswers = selectedAnswers[index] || [];
+      const correctAnswers = question.correctAnswers;
+      
+      // Vérifier si les réponses utilisateur correspondent aux réponses correctes
+      const isCorrect = userAnswers.length === correctAnswers.length && 
+                       userAnswers.every(answer => correctAnswers.includes(answer));
+      
+      return isCorrect ? score + 1 : score;
+    }, 0);
+  };
+
+  const getAnsweredCount = (): number => {
+    return selectedAnswers.filter(answers => answers.length > 0).length;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-3 text-slate-600">
+          <div className="h-6 w-6 rounded-full border-2 border-slate-400 border-t-transparent animate-spin" />
+          <span>Chargement du quiz…</span>
+        </div>
+      </div>
     );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 px-6 py-4 text-rose-700 max-w-md text-center">
+          <h2 className="text-lg font-semibold mb-2">Impossible de charger le quiz</h2>
+          <p>{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 rounded-lg bg-rose-600 px-4 py-2 text-white hover:bg-rose-700 transition"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-amber-700 max-w-md text-center">
+          <h2 className="text-lg font-semibold mb-2">Aucun quiz disponible</h2>
+          <p>Aucune question n&apos;a été trouvée pour ce sujet.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const total = questions.length;
+  const answeredCount = getAnsweredCount();
+  const currentQuestionData = questions[currentQuestion];
+  const currentSelectedAnswers = selectedAnswers[currentQuestion] || [];
 
   /* ---------- Results ---------- */
   if (quizCompleted) {
     const finalScore = calculateScore();
+    
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="w-full max-w-3xl rounded-xl border border-slate-200 bg-white shadow-lg">
+        <div className="w-full max-w-4xl rounded-xl border border-slate-200 bg-white shadow-lg">
           <div className="text-center p-8 border-b border-slate-200">
             <div className="mb-4 flex justify-center">
               <Trophy className="w-16 h-16 text-sky-600" />
             </div>
-            <h1 className="text-3xl font-bold text-slate-900">Quiz complete</h1>
-            <p className="text-slate-600 mt-1">
+            <h1 className="text-3xl font-bold text-slate-900">Quiz terminé !</h1>
+            <p className="text-slate-600 mt-2">
               Score:{" "}
               <span className="font-semibold">
                 {finalScore}/{total}
               </span>{" "}
               ({Math.round((finalScore / total) * 100)}%)
             </p>
+            <p className="text-sm text-slate-500 mt-1">
+              {total} question{total > 1 ? 's' : ''} au total
+            </p>
           </div>
 
-          {/* Grille responsive des questions (quel que soit le nombre) */}
+          {/* Grille responsive des questions */}
           <div className="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {questions.map((q, i) => {
-              const ok = answers[i] === q.correctAnswer;
+              const userAnswers = selectedAnswers[i] || [];
+              const correctAnswers = q.correctAnswers;
+              const isCorrect = userAnswers.length === correctAnswers.length && 
+                               userAnswers.every(answer => correctAnswers.includes(answer));
+              
               return (
                 <div
                   key={q.id}
                   className={`rounded-lg border px-3 py-2 text-sm text-center
                   ${
-                    ok
+                    isCorrect
                       ? "border-emerald-600 text-emerald-700 bg-emerald-50"
                       : "border-rose-600 text-rose-700 bg-rose-50"
                   }`}
@@ -281,12 +393,18 @@ export function Component() {
               onClick={() => {
                 setQuizCompleted(false);
                 setCurrentQuestion(0);
-                setSelectedAnswer(null);
-                setAnswers(Array(total).fill(null));
+                setSelectedAnswers(Array(questions.length).fill([]));
+                
+                // Réinitialiser les userAnswers
+                const resetQuestions = questions.map(q => ({
+                  ...q,
+                  userAnswers: []
+                }));
+                setQuestions(resetQuestions);
               }}
               className="inline-flex items-center justify-center rounded-lg bg-sky-600 px-6 py-2.5 text-white font-medium hover:bg-sky-700 transition"
             >
-              Take quiz again
+              Refaire le quiz
             </button>
           </div>
         </div>
@@ -294,7 +412,7 @@ export function Component() {
     );
   }
 
-  /* ---------- Quiz Screen (adapté à n questions) ---------- */
+  /* ---------- Quiz Screen ---------- */
   return (
     <div className="min-h-[calc(100vh-64px)] grid place-items-center bg-slate-50 px-4 ">
       <div className="w-full max-w-3xl max-h-[calc(100vh-64px-2rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg flex flex-col">
@@ -302,10 +420,10 @@ export function Component() {
           {/* Header */}
           <div className="flex justify-between items-center mb-4">
             <div className="text-sm text-slate-600">
-              Question {currentQuestion + 1} of {total}
+              Question {currentQuestion + 1} sur {total}
             </div>
             <div className="text-sm text-slate-600">
-              Answered: {answeredCount}/{total}
+              Répondu: {answeredCount}/{total}
             </div>
           </div>
 
@@ -317,7 +435,7 @@ export function Component() {
           >
             {questions.map((_, i) => {
               const isCurrent = i === currentQuestion;
-              const isAnswered = answers[i] !== null;
+              const isAnswered = (selectedAnswers[i] || []).length > 0;
               return (
                 <div
                   key={i}
@@ -354,15 +472,15 @@ export function Component() {
 
           {/* Question */}
           <h2 className="text-2xl font-bold text-slate-900 leading-tight mb-6">
-            {questions[currentQuestion].question}
+            {currentQuestionData.question}
           </h2>
         </div>
 
-        {/* Options (sélection bleue uniquement) */}
+        {/* Options */}
         <div className="p-6">
           <div className="space-y-3 mb-6">
-            {questions[currentQuestion].options.map((option, index) => {
-              const isSelected = index === selectedAnswer;
+            {currentQuestionData.options.map((option, index) => {
+              const isSelected = currentSelectedAnswers.includes(index);
               const cls = [
                 "w-full p-4 text-left rounded-lg border-2 transition relative focus:outline-none font-medium",
                 isSelected
@@ -389,19 +507,19 @@ export function Component() {
               className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-slate-800 hover:bg-slate-100 disabled:opacity-50"
             >
               <ChevronLeft className="w-4 h-4" />
-              <span>Previous</span>
+              <span>Précédent</span>
             </button>
 
             <div className="text-sm text-slate-600">
-              {selectedAnswer !== null ? "Answer selected" : "Select an answer"}
+              {currentSelectedAnswers.length > 0 ? "Réponse sélectionnée" : "Sélectionnez une réponse"}
             </div>
 
             <button
               onClick={handleNext}
-              disabled={selectedAnswer === null}
+              disabled={currentSelectedAnswers.length === 0}
               className="flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-white hover:bg-sky-700 disabled:opacity-50"
             >
-              <span>{currentQuestion === total - 1 ? "Finish" : "Next"}</span>
+              <span>{currentQuestion === total - 1 ? "Terminer" : "Suivant"}</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

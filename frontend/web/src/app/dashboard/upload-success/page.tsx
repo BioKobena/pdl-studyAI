@@ -218,52 +218,52 @@ function UploadSuccess() {
                 <OptionButton icon="/quizz.png" label="Quizz" />
               </Link>
 
-            </Link><OptionButton icon="/chat.png" label="Chat" /><Link rel="stylesheet" href="/dashboard/quiz">
-                <OptionButton icon="/quizz.png" label="Quizz" />
-              </Link><a
+            {/* </Link> */}
+              <a
                 href="/dashboard/upload"
                 className="rounded-full border-2 border-gray-300 px-6 py-2 text-gray-600 hover:bg-gray-50"
               >
                 Changer de fichier
-              </a></>
-            </div>
+              </a>
+              </div>
+              </>
           )}
 
-          {/* AJOUT : commandes texte (extrait / copier / télécharger) */}
-          {hasText && (
-            <div className="mt-6 w-full max-w-2xl">
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={() => setShowExtract((s) => !s)}
-                  className="rounded-full border-2 border-[#7CB6DB] text-[#7CB6DB] px-4 py-1.5 hover:bg-[#E8F6FF]"
-                >
-                  {showExtract ? "Masquer l’extrait" : "Voir un extrait"}
-                </button>
-                <button
-                  onClick={() => navigator.clipboard.writeText(sessText)}
-                  className="rounded-full border-2 border-gray-300 text-gray-700 px-4 py-1.5 hover:bg-gray-50"
-                >
-                  Copier le texte
-                </button>
-                <button
-                  onClick={downloadTxt}
-                  className="rounded-full border-2 border-gray-300 text-gray-700 px-4 py-1.5 hover:bg-gray-50"
-                >
-                  Télécharger (.txt)
-                </button>
-              </div>
+      {/* AJOUT : commandes texte (extrait / copier / télécharger) */}
+      {hasText && (
+        <div className="mt-6 w-full max-w-2xl">
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => setShowExtract((s) => !s)}
+              className="rounded-full border-2 border-[#7CB6DB] text-[#7CB6DB] px-4 py-1.5 hover:bg-[#E8F6FF]"
+            >
+              {showExtract ? "Masquer l’extrait" : "Voir un extrait"}
+            </button>
+            <button
+              onClick={() => navigator.clipboard.writeText(sessText)}
+              className="rounded-full border-2 border-gray-300 text-gray-700 px-4 py-1.5 hover:bg-gray-50"
+            >
+              Copier le texte
+            </button>
+            <button
+              onClick={downloadTxt}
+              className="rounded-full border-2 border-gray-300 text-gray-700 px-4 py-1.5 hover:bg-gray-50"
+            >
+              Télécharger (.txt)
+            </button>
+          </div>
 
-              {showExtract && (
-                <pre className="mt-3 whitespace-pre-wrap text-sm leading-6 bg-white border rounded-lg p-3 text-gray-700">
-                  {extractPreview}
-                  {sessText.length > extractPreview.length ? "…" : ""}
-                </pre>
-              )}
-            </div>
+          {showExtract && (
+            <pre className="mt-3 whitespace-pre-wrap text-sm leading-6 bg-white border rounded-lg p-3 text-gray-700">
+              {extractPreview}
+              {sessText.length > extractPreview.length ? "…" : ""}
+            </pre>
           )}
         </div>
-      </main>
+      )}
     </div>
+      </main >
+    </div >
   );
 }
 export default withAuth(UploadSuccess);

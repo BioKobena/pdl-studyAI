@@ -1,41 +1,5 @@
 package com.pdl.studyai_backend.controller;
 
-// import java.util.List;
-
-// import org.springframework.web.bind.annotation.GetMapping;
-// import org.springframework.web.bind.annotation.PostMapping;
-// import org.springframework.web.bind.annotation.RequestBody;
-// import org.springframework.web.bind.annotation.RequestMapping;
-// import org.springframework.web.bind.annotation.RequestParam;
-// import org.springframework.web.bind.annotation.RestController;
-
-// import com.pdl.studyai_backend.model.ChatMessage;
-// import com.pdl.studyai_backend.service.ChatService;
-
-// import reactor.core.publisher.Mono;
-
-// @RestController
-// @RequestMapping("/chat")
-// public class ChatController {
-
-//     private final ChatService chatService;
-
-//     public ChatController(ChatService chatService) {
-//         this.chatService = chatService;
-//     }
-
-//     @GetMapping("/conversation")
-//     public List<ChatMessage> getConversation(@RequestParam String userId, @RequestParam String subjectId) {
-//         return chatService.getConversation(userId, subjectId);
-//     }
-
-//     @PostMapping("/message")
-//     public Mono<String> sendMessage(@RequestParam String userId,
-//                                     @RequestParam String subjectId,
-//                                     @RequestBody String message) {
-//         return chatService.sendMessage(userId, subjectId, message);
-//     }
-// }
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;

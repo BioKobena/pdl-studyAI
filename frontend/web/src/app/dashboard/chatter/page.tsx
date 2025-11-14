@@ -1,9 +1,10 @@
 // components/ui/ai-assistant-wrapper.tsx
-'use client'
+'use client';
 
 import AiAssistant from "@/component/ui/chat";
+import { withAuth } from "@/lib/api/withAuth.client";
 
-export default function AiAssistantWrapper({
+ function AiAssistantWrapper({
   title,
   description,
 }: { title?: string; description?: string }) {
@@ -19,3 +20,4 @@ export default function AiAssistantWrapper({
     </div>
   );
 }
+export default withAuth(AiAssistantWrapper);

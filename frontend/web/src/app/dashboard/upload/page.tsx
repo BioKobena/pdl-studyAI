@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useRef, useState } from "react";
 import React from "react";
@@ -7,6 +7,7 @@ import { FileText, MessageCircle, GraduationCap } from "lucide-react";
 import { HoverEffect } from "@/component/ui/hover-effect";
 import {InteractiveHoverButton} from "@/component/ui/interactive-button"
 import { useRouter } from "next/navigation";
+import { withAuth } from "@/lib/api/withAuth.client";
 
 
 // ---------- AJOUT: aide extraction PDF (pdfjs-dist) + nettoyage ----------
@@ -67,7 +68,7 @@ const projects = [
   },
 ];
 
-export default function UploadFiles() {
+ function UploadFiles() {
   const router = useRouter();
 
   const [uploadFiles, setUploadFiles] = useState<FileInfo[]>([]);
@@ -207,3 +208,4 @@ export default function UploadFiles() {
     </div>
   );
 }
+export default withAuth(UploadFiles);

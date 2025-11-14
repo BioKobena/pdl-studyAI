@@ -19,7 +19,7 @@ export default function LoginPage() {
         setErr(null);
         setLoading(true);
         const email = (document.getElementById("email") as HTMLInputElement)?.value.trim();
-    const password = (document.getElementById("mot-password") as HTMLInputElement)?.value;
+        const password = (document.getElementById("mot-password") as HTMLInputElement)?.value;
 
     try {
       const res = await login({ email, password } as LoginRequest);

@@ -1,5 +1,6 @@
 // src/lib/api/auth.ts
 import { http, setToken } from "./http";
+import { saveUser } from "../session";
 
 // ---------- Types ----------
 export interface LoginRequest {
@@ -37,10 +38,13 @@ export async function login(payload: LoginRequest) {
     method: "POST",
     body: JSON.stringify(payload),
   });
+  localStorage.setItem("userId",res.id);
+
 
   // on sauvegarde le token pour les requêtes protégées
   if (res.token) {
     setToken(res.token);
+    saveUser({ id: res.id, email: res.email, fullName: res.fullName });
   }
 
   return res;

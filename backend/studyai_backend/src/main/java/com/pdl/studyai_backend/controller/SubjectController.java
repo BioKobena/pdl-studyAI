@@ -1,18 +1,29 @@
 package com.pdl.studyai_backend.controller;
 
-import jakarta.validation.Valid;
-
 import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.pdl.studyai_backend.dto.SubjectRequest;
+import com.pdl.studyai_backend.model.Quiz;
 import com.pdl.studyai_backend.model.Resume;
 import com.pdl.studyai_backend.model.Subject;
-import com.pdl.studyai_backend.service.SubjectService;
 import com.pdl.studyai_backend.service.ResumeService;
+import com.pdl.studyai_backend.service.QuizService;
+import com.pdl.studyai_backend.service.SubjectService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @CrossOrigin(origins="*")
@@ -21,10 +32,12 @@ public class SubjectController {
     
     private final SubjectService subjectService;
     private final ResumeService resumeService;
+    private final QuizService quizService;
 
-    public SubjectController(SubjectService subjectService, ResumeService resumeService) {
+    public SubjectController(SubjectService subjectService, ResumeService resumeService, QuizService quizService) {
         this.subjectService = subjectService;
         this.resumeService = resumeService;
+        this.quizService = quizService;
     }
 
     @PostMapping("/create")
@@ -102,6 +115,20 @@ public class SubjectController {
             Resume resume = this.resumeService.getActiveResumeBySubjectId(subjectId);
             if (resume != null) {
                 return ResponseEntity.ok(resume);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur interne : " + e.getMessage());
+        }
+    }
+    
+    @GetMapping("/quiz/{subjectId}")
+    public ResponseEntity<?> getQuizzesBySubjectId(@PathVariable String subjectId) {
+        try {
+            Quiz quiz = this.quizService.getActiveQuizBySubjectId(subjectId);
+            if (quiz != null) {
+                return ResponseEntity.ok(quiz);
             } else {
                 return ResponseEntity.notFound().build();
             }

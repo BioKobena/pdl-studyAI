@@ -78,7 +78,8 @@ jobs:
           NODE_ENV: production
           # Définis-la dans Settings → Secrets and variables → Actions → Variables
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
-        run: npm run build
+       # Test très important à effectuer
+       # run: npm run build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

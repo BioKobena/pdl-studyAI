@@ -15,9 +15,11 @@ import { InteractiveHoverButton } from "@/component/ui/interactive-button";
 import { useRouter } from "next/navigation";
 import { withAuth } from "@/lib/api/withAuth.client";
 
-// extraction PDF typée depuis lib
 import { extractPdfTextFromFile } from "@/lib/pdf";
 
+// -----------------------------
+// Helpers pour récupérer file
+// -----------------------------
 type BlobLike = { arrayBuffer: () => Promise<ArrayBuffer> };
 
 function pickProp<T>(obj: unknown, key: string): T | undefined {
@@ -27,7 +29,6 @@ function pickProp<T>(obj: unknown, key: string): T | undefined {
   return undefined;
 }
 
-// Récupère File/Blob en évitant any
 function getNativeFile(fi: FileInfo): File | null {
   const maybe =
     pickProp<File | Blob>(fi, "file") ??
@@ -40,12 +41,14 @@ function getNativeFile(fi: FileInfo): File | null {
     : null;
 }
 
-// Essaie d'obtenir un nom depuis FileInfo si exposé par ton composant
 function getFileInfoName(fi: FileInfo): string | undefined {
   const n = pickProp<unknown>(fi, "name");
   return typeof n === "string" ? n : undefined;
 }
 
+// -----------------------------------
+// Sections descriptive (inchangé)
+// -----------------------------------
 const projects = [
   {
     title: "Générer un résumé intelligent",
@@ -67,23 +70,42 @@ const projects = [
   },
 ];
 
+// -----------------------------------
+// PRINCIPAL : UploadFiles
+// -----------------------------------
 function UploadFiles() {
   const router = useRouter();
 
   const [uploadFiles, setUploadFiles] = useState<FileInfo[]>([]);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [errMsg, setErrMsg] = useState<string | null>(null);
-  const processingRef = useRef(false); // évite double-traitement
 
-  const onFileSelectChange = (files: FileInfo[]) => {
-    setUploadFiles(files);
-  };
+  const processingRef = useRef(false);
+  const progressInterval = useRef<NodeJS.Timeout | null>(null);
+
+  const onFileSelectChange = (files: FileInfo[]) => setUploadFiles(files);
 
   const onRemove = (fileId: string) => {
     setUploadFiles(uploadFiles.filter((file) => file.id !== fileId));
   };
 
-  // Déclenchement auto dès qu’un fichier est choisi
+  // -----------------------------
+  // Nouvelle animation fluide
+  // -----------------------------
+  const animateProgress = () => {
+    let value = 0;
+
+    progressInterval.current = setInterval(() => {
+      value += 1;
+      if (value >= 95) value = 95;
+      setProgress(value);
+    }, 35);
+  };
+
+  // --------------------------------------------------------------
+  // TRAITEMENT AUTO DÈS CHOIX DU FICHIER
+  // --------------------------------------------------------------
   useEffect(() => {
     if (processingRef.current) return;
     if (!uploadFiles || uploadFiles.length === 0) return;
@@ -93,12 +115,11 @@ function UploadFiles() {
     const name = getFileInfoName(first) ?? file?.name ?? "document.pdf";
 
     const isPdf =
-      name.toLowerCase().endsWith(".pdf") || file?.type === "application/pdf";
+      name.toLowerCase().endsWith(".pdf") ||
+      file?.type === "application/pdf";
 
     if (!isPdf) {
-      setErrMsg(
-        "L’extraction locale est disponible pour les PDF. Vous pouvez importer une version PDF texte.",
-      );
+      setErrMsg("Importez un fichier PDF texte (non scanné).");
       return;
     }
 
@@ -106,53 +127,85 @@ function UploadFiles() {
     setErrMsg(null);
     setLoading(true);
 
+    // 🔥 Lancer barre fluide
+    setProgress(0);
+    animateProgress();
+
     (async () => {
       try {
-        if (!file) {
-          throw new Error(
-            "Fichier introuvable dans FileInfo. Adapte getNativeFile(...) selon ton composant.",
-          );
-        }
+        if (!file) throw new Error("Fichier introuvable.");
 
-        // 1) Blob URL locale pour prévisualiser sans envoyer le fichier au serveur
         const blobUrl = URL.createObjectURL(file);
-
-        // 2) Extraction du texte côté navigateur
         const text = await extractPdfTextFromFile(file);
 
-        // 3) Stockage temporaire en session + clé
         const key = crypto.randomUUID();
         sessionStorage.setItem(`pdfText:${key}`, text);
         sessionStorage.setItem(`pdfName:${key}`, name);
         sessionStorage.setItem(`pdfBlobUrl:${key}`, blobUrl);
 
-        // 4) Redirection vers la page d’actions
-        router.push(`/dashboard/upload-success?key=${key}`);
-      } catch (e: unknown) {
+        // 🔥 Finalisation 95 → 100%
+        if (progressInterval.current)
+          clearInterval(progressInterval.current);
+
+        let finish = 95;
+        const finishInterval = setInterval(() => {
+          finish += 1;
+          setProgress(finish);
+          if (finish >= 100) clearInterval(finishInterval);
+        }, 20);
+
+        setTimeout(() => {
+          router.push(`/dashboard/upload-success?key=${key}`);
+        }, 450);
+      } catch (e) {
         console.error(e);
-        setErrMsg(
-          "Échec de l’analyse du PDF. Essayez un autre fichier (PDF texte non scanné).",
-        );
+
+        if (progressInterval.current)
+          clearInterval(progressInterval.current);
+        setProgress(0);
+
+        setErrMsg("Échec de l’analyse. Essayez un autre PDF.");
         setLoading(false);
         processingRef.current = false;
       }
     })();
   }, [uploadFiles, router]);
 
+  // -----------------------------------
+  // UI
+  // -----------------------------------
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 container mx-auto px-4 max-w-4xl">
-        {/* overlay loader “soft” */}
+
+        {/* 🔥 LOADER ANIMÉ FLUIDE (sans barre orange) */}
         {loading && (
-          <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-3">
-              <span className="h-10 w-10 animate-spin rounded-full border-4 border-[#3FA9D9] border-t-transparent" />
-              <p className="text-[#3FA9D9] font-medium">Analyse du PDF…</p>
+          <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+
+            <div className="bg-white shadow-xl p-6 rounded-xl border border-gray-200 flex flex-col items-center w-80 animate-fade-in">
+
+              {/* PDF animé */}
+              <div className="w-28 h-36 border-2 border-dashed border-[#3FA9D9] bg-[#E8F4FB] rounded-lg flex flex-col justify-center items-center text-[#3FA9D9] text-lg font-semibold shadow-sm animate-bounce-slow">
+                PDF
+              </div>
+
+              {/* Barre progression fluide */}
+              <div className="w-full bg-gray-200 rounded-full h-4 mt-6 overflow-hidden">
+                <div
+                  className="bg-[#3FA9D9] h-full transition-all duration-200"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+
+              {/* % */}
+              <p className="text-[#3FA9D9] font-semibold text-sm mt-3">
+                Importation… {progress}%
+              </p>
             </div>
           </div>
         )}
 
-        {/* Upload Area */}
+        {/* Zone upload */}
         <div className="w-full max-w-1xl mx-auto p-4 sm:p-6 lg:p-8">
           <div className="flex flex-col items-center space-y-2 mb-4 mt-4 justify-center">
             <h1 className="text-2xl font-bold tracking-tight text-red-700">
@@ -161,7 +214,6 @@ function UploadFiles() {
             <p className="text-muted-foreground">Révise plus vite.</p>
           </div>
 
-          {/* File Upload */}
           <FileUpload
             files={uploadFiles}
             onFileSelectChange={onFileSelectChange}
@@ -170,7 +222,6 @@ function UploadFiles() {
             maxSize={10}
             maxCount={1}
             className="mt-2"
-            disabled={false}
           >
             <div className="space-y-4">
               <DropZone prompt="Clique ou dépose ton fichier ici" />
@@ -182,7 +233,6 @@ function UploadFiles() {
                 onRemove={onRemove}
                 canResume={true}
               />
-              {/* Message d'erreur lorsque le fichier n'est pas pdf */}
               {errMsg && <p className="text-sm text-amber-600">{errMsg}</p>}
             </div>
           </FileUpload>
@@ -195,12 +245,12 @@ function UploadFiles() {
           </h2>
         </div>
 
-        {/* Cards section */}
         <div className="mb-1">
           <div className="max-w-5xl mx-auto px-8">
             <HoverEffect items={projects} />
           </div>
         </div>
+
         <div className="flex justify-end ml-4">
           <InteractiveHoverButton
             text="Commencer"

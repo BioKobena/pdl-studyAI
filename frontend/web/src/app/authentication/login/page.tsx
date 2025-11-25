@@ -9,9 +9,7 @@ import { Mail } from "lucide-react";
 import PasswordInput from "@/component/ui/password-input";
 import {
   login,
-  // type LoginRequest,
   type LoginSuccess,
-  // type LoginError,
 } from "@/lib/api/auth";
 import { saveUser } from "@/lib/session";
 
@@ -19,22 +17,22 @@ export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(null);
     setLoading(true);
-    const email = (
-      document.getElementById("email") as HTMLInputElement
-    )?.value.trim();
-    const password = (
-      document.getElementById("mot-password") as HTMLInputElement
-    )?.value;
+
+    const email = (document.getElementById("email") as HTMLInputElement)?.value.trim();
+    const password = (document.getElementById("mot-password") as HTMLInputElement)?.value;
 
     try {
-      const res = await login({ email, password }); // le type de retour de `login` doit être typé
-      const u = res as LoginSuccess; // idéalement: tape `login` pour éviter ce cast
+      const res = await login({ email, password });
+      const u = res as LoginSuccess;
 
       saveUser({ id: u.id, email: u.email, fullName: u.fullName });
+
+      // 🔥 Le loader reste visible jusqu'à ce que la page change
       router.push("/dashboard/upload");
     } catch (e: unknown) {
       const message =
@@ -45,8 +43,7 @@ export default function LoginPage() {
             : "Erreur réseau/serveur";
 
       setErr(message);
-    } finally {
-      setLoading(false);
+      setLoading(false); // on enlève le loader si erreur
     }
   };
 
@@ -89,6 +86,7 @@ export default function LoginPage() {
             Mot de passe oublié ?
           </a>
         </div>
+
         {err && <p className="text-sm text-red-600">{err}</p>}
 
         {/* Submit button */}
@@ -111,6 +109,17 @@ export default function LoginPage() {
           S&apos;inscrire
         </a>
       </p>
+
+      {/*Loading overlay identique à celui de l’upload */}
+      {loading && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3">
+            <span className="h-10 w-10 animate-spin rounded-full border-4 border-[#3FA9D9] border-t-transparent" />
+            <p className="text-[#3FA9D9] font-medium">Connexion en cours…</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+  

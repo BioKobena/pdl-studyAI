@@ -116,6 +116,7 @@ export default function RegisterPage() {
       setOk(res.message ?? "Inscription réussie !");
       setTimeout(() => router.replace("/authentication/login"), 800);
     } catch (err: any) {
+      console.log("Error during : ", err);
       // si le serveur renvoie HTML (DOCTYPE...), on masque par un message propre
       setErrors({ general: "Erreur serveur. Réessayez dans un instant." });
     } finally {

@@ -1,37 +1,38 @@
-'use client';
-import Link from 'next/link';
-import { useState, useEffect, useMemo } from 'react';
-import { FileText } from 'lucide-react';
+"use client";
+
+import Link from "next/link";
+import { useState, useEffect, useMemo } from "react";
+import { FileText } from "lucide-react";
 import OptionButton from "../../../component/ui/option-button";
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from "next/navigation";
 import { createSubject } from "@/lib/api/subject";
-import { withAuth } from '@/lib/api/withAuth.client';
+import { withAuth } from "@/lib/api/withAuth.client";
+
 type PdfMeta = { chars: number; ms?: number; pages?: number };
 
 function UploadSuccess() {
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const router = useRouter();
 
   const params = useSearchParams();
-  const key = params.get('key') || '';
-  console.log("Key from params : ", key);
+  const key = params.get("key") || "";
 
-  const [sessName, setSessName] = useState<string>('');
-  const [sessBlobUrl, setSessBlobUrl] = useState<string>('');
-  const [sessText, setSessText] = useState<string>('');
+  const [sessName, setSessName] = useState<string>("");
+  const [sessText, setSessText] = useState<string>("");
   const [meta, setMeta] = useState<PdfMeta | null>(null);
   const [showExtract, setShowExtract] = useState(false);
+
+  // Loader 
+  const [loadingAction, setLoadingAction] = useState(false);
 
   useEffect(() => {
     if (!key) return;
 
     const name = sessionStorage.getItem(`pdfName:${key}`) || "";
-    const blob = sessionStorage.getItem(`pdfBlobUrl:${key}`) || "";
+    const blobUrl = sessionStorage.getItem(`pdfBlobUrl:${key}`) || "";
     const text = sessionStorage.getItem(`pdfText:${key}`) || "";
     const metaRaw = sessionStorage.getItem(`pdfMeta:${key}`);
 
     setSessName(name);
-    setSessBlobUrl(blob);
     setSessText(text);
 
     if (metaRaw) {
@@ -44,98 +45,51 @@ function UploadSuccess() {
       setMeta({ chars: text.length });
     }
 
-    //Lancer la création du subject une fois que le texte est chargé
-
-    // 
-    if (text && text.trim().length > 0) {
-      /**
-       * @marlenegohi 
-       * hasBeenCreated n'existe pas c'est pourquoi il cré à chaque fois un nouveau id pour les documents, il va falloir le géré.
-       * La logique à suivre est de faire un setItem avant de faire le getItem pour "subjectCreated"
-       * J'ai parcouru tout le code mais j'ai pas vu de "hasBeenCreated" ou de "subjectCreated" donc si tu peux revoir ça, ça sera cool.  
-       *  */
-      const hasBeenCreated = sessionStorage.getItem(`subjectCreated:${key}`);
-      console.log("hasBeenCreated : ", hasBeenCreated)
-      const userId = localStorage.getItem("userId");
-      /**
-       * @marlenegohi
-       * Ici j'ai changé le hasBeenCreated que t'avais pour vérifier avec le "key"
-       * En vrai, tu peux voir une autre approche pour le faire, j'ai juste tester ça, je te laisse la main pour le reste.
-       */
-      if (key === null) {
-        (async () => {
-          try {
-            const res = await createSubject({
-              userId: userId,
-              title: name || "Document sans titre",
-              extractText: text,
-            });
-
-            console.log("Sujet créé :", res);
-
-            const subjectId = res?.subject?.id;
-            if (subjectId) {
-              localStorage.setItem("SubjectId", subjectId);
-              console.log("Subject ID sauvegardé :", subjectId);
-            } else {
-              console.warn("Aucun ID trouvé dans la réponse :", res);
-            }
-
-          } catch (err: unknown) {
-            if (err instanceof Error) {
-              console.error("Erreur lors de la création du subject :", err.message);
-            } else {
-              console.error("Erreur lors de la création du subject :", String(err));
-            }
-          }
-        })();
-      }
-    }
-
     return () => {
-      if (blob) URL.revokeObjectURL(blob);
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
   }, [key]);
 
+  const hasText = useMemo(() => sessText.trim().length > 0, [sessText]);
+  const extractPreview = useMemo(() => sessText.slice(0, 1200), [sessText]);
 
-  const isScan = useMemo(() => key && sessText.trim().length === 0, [key, sessText]);
-  const hasText = useMemo(() => sessText.trim().length > 0, [sessText]); // AJOUT
-  const extractPreview = useMemo(() => sessText.slice(0, 1200), [sessText]); // AJOUT
-
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
-  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); setIsDragging(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0 && files[0].type === 'application/pdf') setUploadedFile(files[0]);
-  };
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files; if (files && files.length > 0) setUploadedFile(files[0]);
+  //Fonction qui affiche le loader puis redirige
+  const startLoadingAndRedirect = (url: string) => {
+    setLoadingAction(true);
+    setTimeout(() => router.push(url), 700);
   };
 
-  // AJOUT : télécharger le texte extrait en .txt
+  // Télécharger en .txt
   const downloadTxt = () => {
-    const blob = new Blob([sessText], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([sessText], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = (sessName || 'document') + '.txt'; a.click();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = (sessName || "document") + ".txt";
+    a.click();
     URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 relative">
+
+      {/*LOADER*/}
+      {loadingAction && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3">
+            <span className="h-10 w-10 animate-spin rounded-full border-4 border-[#3FA9D9] border-t-transparent" />
+            <p className="text-[#3FA9D9] font-medium">Chargement…</p>
+          </div>
+        </div>
+      )}
+
       <main className="max-w-2xl mx-auto px-6 py-5">
         <div className="text-center mb-4">
           <p className="text-2xl text-[#3FA9D9]">Révise plus vite</p>
         </div>
 
         {/* Upload Area */}
-        <div
-          className={`mb-10 border-2 rounded-lg p-8 transition-colors ${isDragging ? 'border-[#3FA9D9] bg-blue-50' : ' bg-white'}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
+        <div className="mb-10 border-2 rounded-lg p-8 bg-white">
           <div className="flex flex-col items-center justify-center gap-2">
             <div className="relative w-32 h-32">
               <div className="absolute inset-0 flex items-center justify-center">
@@ -143,91 +97,84 @@ function UploadSuccess() {
                   <div className="flex-1 flex items-center justify-center">
                     <FileText className="w-12 h-12 text-[#c94a4a]" />
                   </div>
-                  <div className="bg-[#c94a4a] w-full py-2 text-white text-center">PDF</div>
+                  <div className="bg-[#c94a4a] w-full py-2 text-white text-center">
+                    PDF
+                  </div>
                 </div>
               </div>
             </div>
 
-            {uploadedFile ? (
-              <p className="text-[#8b0000]">{uploadedFile.name}</p>
-            ) : (
-              <>
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={handleFileInput}
-                  className="hidden"
-                  id="file-upload"
-                />
-              </>
-            )}
-
-            {key && sessName && (
-              <p className="text-[#8b0000] mt-2">Fichier : <b>{sessName}</b></p>
+            {sessName && (
+              <p className="text-[#8b0000] mt-2">
+                Fichier : <b>{sessName}</b>
+              </p>
             )}
           </div>
         </div>
 
         {/* Confirmation d’extraction */}
-        {key && (
-          hasText ? (
-            <div className="mb-6 inline-flex flex-wrap items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
-              <span>✓ PDF analysé</span>
-              <span>• {(meta?.chars ?? sessText.length).toLocaleString()} caractères</span>
-              {typeof meta?.pages === 'number' && <span>• {meta.pages} pages</span>}
-              {typeof meta?.ms === 'number' && <span>• {meta.ms} ms</span>}
-            </div>
-          ) : (
-            <div className="mb-6 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-              Aucun texte extrait — ce PDF semble être un scan (image). Importez une version texte ou activez un OCR côté serveur.
-            </div>
-          )
+        {hasText ? (
+          <div className="mb-6 inline-flex flex-wrap items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
+            <span>✓PDF analysé</span>
+            <span>• {(meta?.chars ?? sessText.length).toLocaleString()} caractères</span>
+          </div>
+        ) : (
+          <div className="mb-6 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+            Aucun texte extrait — ce PDF semble être un scan.
+          </div>
         )}
 
         {/* Options Section */}
-        <div className="flex flex-col items-center justify-center min-h-screenspace-y-6">
-          <h2 className="text-2xl text-gray-700">Commençons votre révision, choisissez une option :</h2>
+        <div className="flex flex-col items-center justify-center space-y-6">
+          <h2 className="text-2xl text-gray-700">
+            Commençons votre révision, choisissez une option :
+          </h2>
 
-          <div className="flex flex-wrap gap-6 justify-center mt-8">
+          <div className="mt-6 flex flex-wrap gap-3 justify-center">
 
-          </div>
+            {/*Résumé → loader */}
+            <button onClick={() => startLoadingAndRedirect(`/dashboard/resume?key=${key}`)}>
+              <OptionButton icon="/resume.png" label="Resume" />
+            </button>
 
-          {/* barre d’actions concrètes avec la key */}
-          {key && (
-            <div className="mt-6 flex flex-wrap gap-3 justify-center">
-              <Link rel="stylesheet" href={`/dashboard/resume?key=${key}`} >
-                <OptionButton icon="/resume.png" label="Résumé" />
-              </Link>
+            {/*Chat → loader */}
+            <button onClick={() => startLoadingAndRedirect(`/dashboard/chatter?key=${key}`)}>
               <OptionButton icon="/chat.png" label="Chat" />
-              <Link rel="stylesheet" href="/dashboard/quiz">
-                <OptionButton icon="/quizz.png" label="Quizz" />
-              </Link>
+            </button>
 
-              <a
-                href="/dashboard/upload"
-                className="rounded-full border-2 border-gray-300 px-6 py-2 text-gray-600 hover:bg-gray-50"
-              >
-                Changer de fichier
-              </a>
-            </div>
-          )}
+            {/*Quizz → loader */}
+            <button onClick={() => startLoadingAndRedirect(`/dashboard/quiz?key=${key}`)}>
+              <OptionButton icon="/quizz.png" label="Quizz" />
+            </button>
 
-          {/* AJOUT : commandes texte (extrait / copier / télécharger) */}
-          {hasText && (
+            {/*Changer de fichier → loader
+            <button
+              onClick={() => startLoadingAndRedirect("/dashboard/upload")}
+              className="rounded-full border-2 border-gray-300 px-6 py-2 text-gray-600 hover:bg-gray-50"
+            >
+              Changer de fichier
+            </button>
+             */}
+          </div>
+        
+          {/* Commandes texte */}
+          {/*hasText && (
             <div className="mt-6 w-full max-w-2xl">
               <div className="flex flex-wrap gap-3">
                 <button
-                  onClick={() => setShowExtract(s => !s)}
+                  onClick={() => setShowExtract((s) => !s)}
                   className="rounded-full border-2 border-[#7CB6DB] text-[#7CB6DB] px-4 py-1.5 hover:bg-[#E8F6FF]"
                 >
-                  {showExtract ? 'Masquer l’extrait' : 'Voir un extrait'}
+                  {showExtract ? "Masquer l’extrait" : "Voir un extrait"}
                 </button>
+
                 <button
                   onClick={() => navigator.clipboard.writeText(sessText)}
                   className="rounded-full border-2 border-gray-300 text-gray-700 px-4 py-1.5 hover:bg-gray-50"
                 >
                   Copier le texte
                 </button>
+
                 <button
                   onClick={downloadTxt}
                   className="rounded-full border-2 border-gray-300 text-gray-700 px-4 py-1.5 hover:bg-gray-50"
@@ -238,16 +185,17 @@ function UploadSuccess() {
 
               {showExtract && (
                 <pre className="mt-3 whitespace-pre-wrap text-sm leading-6 bg-white border rounded-lg p-3 text-gray-700">
-                  {extractPreview}{sessText.length > extractPreview.length ? '…' : ''}
+                  {extractPreview}
+                  {sessText.length > extractPreview.length ? "…" : ""}
                 </pre>
               )}
             </div>
-          )}
+          )*/}
+          
         </div>
-
-
       </main>
     </div>
   );
 }
+
 export default withAuth(UploadSuccess);

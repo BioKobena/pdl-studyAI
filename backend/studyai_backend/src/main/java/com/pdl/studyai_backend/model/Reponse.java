@@ -1,12 +1,20 @@
 package com.pdl.studyai_backend.model;
 
-import org.springframework.data.annotation.Id;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+// import org.springframework.data.annotation.Id;
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Reponse {
-    @Id
-    private String id;
+    // @Id
+    // private String id;
     private String content;
+    @JsonAlias({ "isCorrect", "iscorrect", "correct" })
+    @JsonProperty("isCorrect")
     private boolean isCorrect;
+    @JsonAlias({ "isSelected", "isselected", "selected" })
+    @JsonProperty("isSelected")
     private boolean isSelected;
 
     public Reponse() {}
@@ -16,9 +24,9 @@ public class Reponse {
         this.isSelected = false;
     }
     //getters
-    public String getId() {
-        return id;
-    }
+    // public String getId() {
+    //     return id;
+    // }
     public String getContent() {
         return content;
     }

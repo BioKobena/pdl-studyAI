@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
 import { Animation } from "@/component/ui/animation-robotAi";
-import { Button } from '@/component/ui/button';
-import { useRouter } from 'next/navigation';
+import { Button } from "@/component/ui/button";
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -11,26 +11,31 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
       <div className="max-w-2xl w-full text-center">
         {/* Title */}
-        <h1 className="text-[#3FA9D9] mb-8 text-4xl font-bold font-(family-name:--font-kufam-sans)">StudyAI</h1>
+        <h1 className="text-[#3FA9D9] mb-8 text-4xl font-bold font-(family-name:--font-kufam-sans)">
+          StudyAI
+        </h1>
 
         {/* Welcome message */}
-        <h2 className="text-[#3FA9D9] mb-8 text-2xl font-(family-name:--font-kufam-sans)">Bonjour, bienvenue</h2>
+        <h2 className="text-[#3FA9D9] mb-8 text-2xl font-(family-name:--font-kufam-sans)">
+          Bonjour, bienvenue
+        </h2>
 
         {/* Description */}
         <p className="text-gray-700 mb-12 font-(family-name:--font-kufam-sans) max-w-lg mx-auto">
-          Créé un compte pour sauvegarder tes quiz, ton historique et tes scores.
+          Créé un compte pour sauvegarder tes quiz, ton historique et tes
+          scores.
         </p>
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
           <Button
-            onClick={() => router.push('/authentication/login')}
+            onClick={() => router.push("/authentication/login")}
             className="bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white px-12 py-6 rounded-full min-w-[200px] font-(family-name:--font-kufam-sans)"
           >
             Connexion
           </Button>
           <Button
-            onClick={() => router.push('/authentication/register')}
+            onClick={() => router.push("/authentication/register")}
             className="bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white px-12 py-6 rounded-full min-w-[200px] font-(family-name:--font-kufam-sans)"
           >
             Inscription

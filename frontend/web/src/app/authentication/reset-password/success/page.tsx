@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from 'next/navigation';
-
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 // masque sympa si tu passes ?email=contact@example.com dans l’URL
 function maskEmail(email?: string) {
   if (!email) return "votre e-mail";
   const [name, domain] = email.split("@");
   const masked =
-    name.length > 2 ? name[0] + "•".repeat(name.length - 2) + name.slice(-1) : "••";
+    name.length > 2
+      ? name[0] + "•".repeat(name.length - 2) + name.slice(-1)
+      : "••";
   return `${masked}@${domain}`;
 }
 
@@ -46,22 +46,24 @@ export default function VerifyEmail() {
       inputsRef.current[idx - 1]?.focus();
     }
     if (e.key === "ArrowLeft" && idx > 0) inputsRef.current[idx - 1]?.focus();
-    if (e.key === "ArrowRight" && idx < code.length - 1) inputsRef.current[idx + 1]?.focus();
+    if (e.key === "ArrowRight" && idx < code.length - 1)
+      inputsRef.current[idx + 1]?.focus();
   };
 
   const onPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 4);
     if (!pasted) return;
     e.preventDefault();
     const arr = pasted.split("");
-    setCode((_) => {
-      const next = ["", "", "", ""];
-      for (let i = 0; i < Math.min(arr.length, 4); i++) next[i] = arr[i];
-      return next;
-    });
+    const next = ["", "", "", ""];
+    for (let i = 0; i < Math.min(arr.length, 4); i++) next[i] = arr[i];
+    setCode(next);
     inputsRef.current[Math.min(arr.length, 4) - 1]?.focus();
   };
-        const router = useRouter();
+  const router = useRouter();
 
   const codeValue = code.join("");
   const canSubmit = codeValue.length === 4;
@@ -71,9 +73,9 @@ export default function VerifyEmail() {
     if (!canSubmit) return;
 
     // TODO: POST /api/auth/verify-code { email: rawEmail, code: codeValue }
-   // alert(`Code soumis : ${codeValue}`);
+    // alert(`Code soumis : ${codeValue}`);
     // redirect vers succès si OK
-    router.push('/authentication/reset-password/MAJmdp');
+    router.push("/authentication/reset-password/MAJmdp");
   };
 
   const handleResend = async () => {
@@ -84,7 +86,6 @@ export default function VerifyEmail() {
   return (
     <div>
       {/* Header */}
-     
 
       {/* Contenu */}
       <main className="max-w-md mx-auto px-6">
@@ -93,7 +94,8 @@ export default function VerifyEmail() {
         </h1>
 
         <p className="text-[15px] text-gray-700 mt-5 text-center leading-6">
-          Nous avons envoyé un code à <span className="font-medium text-gray-900">{emailShown}</span>.
+          Nous avons envoyé un code à{" "}
+          <span className="font-medium text-gray-900">{emailShown}</span>.
           <br />
           Entrez le code à 4 chiffres reçu dans votre e-mail.
         </p>
@@ -103,7 +105,6 @@ export default function VerifyEmail() {
             {code.map((digit, idx) => (
               <input
                 key={idx}
-                
                 inputMode="numeric"
                 pattern="[0-9]*"
                 maxLength={1}
@@ -120,10 +121,10 @@ export default function VerifyEmail() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="w-full bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white mt-8 ml-4 "      >
+            className="w-full bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white mt-8 ml-4 "
+          >
             Suivant
           </button>
-          
         </form>
 
         <p className="text-center text-[15px] text-gray-700 mt-5">
@@ -136,7 +137,6 @@ export default function VerifyEmail() {
             Renvoyer
           </button>
         </p>
-        
       </main>
     </div>
   );

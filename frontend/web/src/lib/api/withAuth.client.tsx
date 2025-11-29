@@ -1,4 +1,4 @@
-"use client"; 
+"use client";
 // ⬆️ Indique à Next.js que ce fichier est exécuté côté client (obligatoire car on utilise useEffect / useRouter)
 
 import { useEffect } from "react";
@@ -27,11 +27,9 @@ export function withAuth<P extends object>(Comp: React.ComponentType<P>) {
       if (!token) {
         // On garde la page demandée pour y revenir après le login
         // window.location.pathname = "/resume" par ex.
-        const next =
-          typeof window !== "undefined" ? window.location.pathname : "/";
 
         // Redirection côté client
-       
+
         router.replace(`/authentication/login`);
       }
     }, [router]); // dépendance sur router (bonne pratique)

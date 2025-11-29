@@ -6,7 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "quizzes")
-public class Quiz {
+public class Quiz { 
     @Id
     private String id;
     private String subjectId;

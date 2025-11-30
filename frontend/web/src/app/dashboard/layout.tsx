@@ -22,6 +22,13 @@ function Layout({ children }: { children: React.ReactNode }) {
     setToken(null); // supprime le token
     router.replace("/authentication/login"); // renvoie vers login
   };
+  const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+      setIsClient(true);
+    }, []
+  );
+
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -36,14 +43,15 @@ function Layout({ children }: { children: React.ReactNode }) {
             height={100}
           />
         </Link>
+  
 
         {/* Liens de navigation */}
         <div className="flex items-center gap-4">
           {/* Liens principaux */}
           <div className="flex gap-4">
             <span className="opacity-90">
-              {name ? `Bonjour, ${name}` : "Bonjour"}
-            </span>
+              {!isClient ? "Bonjour" : name ? `Bonjour, ${name}` : "Bonjour"}
+          </span>
             <Link href="#" className="hover:underline">
               Accueil
             </Link>

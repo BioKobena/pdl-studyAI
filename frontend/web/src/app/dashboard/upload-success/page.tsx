@@ -133,19 +133,19 @@ function UploadSuccess() {
           <div className="mt-6 flex flex-wrap gap-3 justify-center">
 
             {/*Résumé → loader */}
-            <button onClick={() => startLoadingAndRedirect(`/dashboard/resume?key=${key}`)}>
+            <div onClick={() => startLoadingAndRedirect(`/dashboard/resume?key=${key}`)}>
               <OptionButton icon="/resume.png" label="Resume" />
-            </button>
+            </div>
 
             {/*Chat → loader */}
-            <button onClick={() => startLoadingAndRedirect(`/dashboard/chatter?key=${key}`)}>
+            <div onClick={() => startLoadingAndRedirect(`/dashboard/chatter?key=${key}`)}>
               <OptionButton icon="/chat.png" label="Chat" />
-            </button>
+            </div>
 
             {/*Quizz → loader */}
-            <button onClick={() => startLoadingAndRedirect(`/dashboard/quiz?key=${key}`)}>
+            <div onClick={() => startLoadingAndRedirect(`/dashboard/quiz?key=${key}`)}>
               <OptionButton icon="/quizz.png" label="Quizz" />
-            </button>
+            </div>
 
             {/*Changer de fichier → loader
             <button

@@ -11,32 +11,35 @@ export type ChatResponse = {
  * Même si l’API backend n’est pas encore prête, cette fonction renverra
  * automatiquement "Chat trouvé" en mode fallback.
  */
-export async function chatWithSubject(
-  subjectId: string,
-  userMessage: string
-): Promise<ChatResponse> {
+export async function sendChatMessage(userId:String,subjectId:string,message:string){
+  const token = localStorage.getItem("auth_token");
+  console.log("API URL =", process.env.NEXT_PUBLIC_API_BASE_URL);
+  console.log("TOKEN=",token);
+
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/subject/${subjectId}/chat`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/chat/message?userId=${userId}&subjectId=${subjectId}`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage }),
-      }
+        headers: { 
+          "Content-type":"text/plain",
+          Authorization:`Bearer ${token}` },
+       body:message,
+      },
+     
     );
 
     if (!res.ok) {
-      console.warn("Chat API non disponible, fallback activé.");
-      return { message: "Chat trouvé (fallback)" };
+      console.error("Chat API error", res.status);
+
+      return { message: "Erreur lors de la communication avec l’IA." };
     }
 
-    const data = await res.json();
+    const text = await res.text();
     return {
-      message: data.message ?? "Réponse vide du serveur",
-      fullResponse: JSON.stringify(data),
+      message: text
     };
   } catch (error) {
-    console.warn("Erreur API chat:", error);
-    return { message: "Chat trouvé (fallback)" };
+    return { message: "Erreur interne." };
   }
 }

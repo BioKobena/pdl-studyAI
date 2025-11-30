@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Loader2, Bot, User } from "lucide-react";
-import { chatWithSubject } from "@/lib/api/chat";
+import { sendChatMessage } from "@/lib/api/chat";
 
 export default function AIMessageBar() {
   const [input, setInput] = useState("");
@@ -26,12 +26,12 @@ export default function AIMessageBar() {
 
     // push user message
     setMessages((prev) => [...prev, { text: userMessage, isUser: true }]);
-
-    const subjectId = localStorage.getItem("SubjectId");
-    if (!subjectId) return;
-
+    
     setIsTyping(true);
-    const result = await chatWithSubject(subjectId, userMessage);
+
+    const userId = localStorage.getItem("userId");
+    const subjectId = localStorage.getItem("SubjectId")
+    const result= await sendChatMessage(userId!,subjectId!, userMessage)
     setIsTyping(false);
 
     // push AI message

@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { FileText } from "lucide-react";
 import OptionButton from "../../../component/ui/option-button";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -12,18 +11,23 @@ type PdfMeta = { chars: number; ms?: number; pages?: number };
 
 function UploadSuccess() {
   const router = useRouter();
-
   const params = useSearchParams();
   const key = params.get("key") || "";
 
   const [sessName, setSessName] = useState<string>("");
   const [sessText, setSessText] = useState<string>("");
   const [meta, setMeta] = useState<PdfMeta | null>(null);
-  const [showExtract, setShowExtract] = useState(false);
 
-  // Loader 
   const [loadingAction, setLoadingAction] = useState(false);
+  const [creatingSubject, setCreatingSubject] = useState(false);
+  const [subjectId, setSubjectId] = useState<string>("");
 
+  // ✅ anti double call (dev/StrictMode)
+  const createOnceRef = useRef(false);
+
+  // -------------------------------------------------------
+  // 1) Charger le PDF depuis sessionStorage (TOUJOURS)
+  // -------------------------------------------------------
   useEffect(() => {
     if (!key) return;
 
@@ -45,40 +49,124 @@ function UploadSuccess() {
       setMeta({ chars: text.length });
     }
 
+    // subjectId déjà créé ?
+    const existingSubjectId = sessionStorage.getItem(`subjectId:${key}`) || "";
+    if (existingSubjectId) setSubjectId(existingSubjectId);
+
     return () => {
       if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
   }, [key]);
 
   const hasText = useMemo(() => sessText.trim().length > 0, [sessText]);
-  const extractPreview = useMemo(() => sessText.slice(0, 1200), [sessText]);
 
-  //Fonction qui affiche le loader puis redirige
-  const startLoadingAndRedirect = (url: string) => {
-    setLoadingAction(true);
-    setTimeout(() => router.push(url), 700);
+  const getUserId = () => {
+    const fromLocal = localStorage.getItem("userid");
+    if (fromLocal) return fromLocal;
+
+    try {
+      const currentUser = JSON.parse(localStorage.getItem("current_user") || "{}");
+      return currentUser?.id || null;
+    } catch {
+      return null;
+    }
   };
 
-  // Télécharger en .txt
-  const downloadTxt = () => {
-    const blob = new Blob([sessText], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = (sessName || "document") + ".txt";
-    a.click();
-    URL.revokeObjectURL(url);
+  // -------------------------------------------------------
+  // 2) Créer le subject (1 seule fois par key)
+  // -------------------------------------------------------
+  const ensureSubjectId = useCallback(async (): Promise<string> => {
+    if (!key) throw new Error("key manquant");
+    if (!sessText.trim()) throw new Error("Aucun texte extrait");
+
+    // déjà en mémoire ?
+    const cached = sessionStorage.getItem(`subjectId:${key}`);
+    if (cached) return cached;
+
+    // si création déjà en cours -> attendre
+    if (creatingSubject) {
+      await new Promise((r) => setTimeout(r, 250));
+      const cachedAfter = sessionStorage.getItem(`subjectId:${key}`);
+      if (cachedAfter) return cachedAfter;
+    }
+
+    setCreatingSubject(true);
+    try {
+      const userId = getUserId();
+      const payload = {
+        userId,
+        title: sessName || "Document",
+        extractText: sessText,
+      };
+
+      const res = await createSubject(payload);
+
+      const id =
+        (res as any)?.subjectId ??
+        (res as any)?.id ??
+        (res as any)?.subject?.id;
+
+      if (!id) {
+        console.error("createSubject response:", res);
+        throw new Error("Le backend n’a pas renvoyé de subjectId");
+      }
+
+      const idStr = String(id);
+      sessionStorage.setItem(`subjectId:${key}`, idStr);
+      setSubjectId(idStr);
+
+      return idStr;
+    } finally {
+      setCreatingSubject(false);
+    }
+  }, [key, sessName, sessText, creatingSubject]);
+
+  // -------------------------------------------------------
+  // 3) Auto-create dès que le texte est prêt (sans bloquer le chargement)
+  // -------------------------------------------------------
+  useEffect(() => {
+    if (!key) return;
+
+    // ✅ on attend que le texte soit vraiment chargé
+    if (!sessText.trim()) return;
+
+    // ✅ si déjà créé, rien à faire
+    if (subjectId) return;
+
+    // ✅ anti double call dev
+    if (createOnceRef.current) return;
+    createOnceRef.current = true;
+
+    ensureSubjectId().catch((e) => {
+      console.error("ensureSubjectId auto:", e);
+      createOnceRef.current = false; // permet retry (clic)
+    });
+  }, [key, sessText, subjectId, ensureSubjectId]);
+
+  // -------------------------------------------------------
+  // 4) Redirection : garantit subjectId + passe en URL
+  // -------------------------------------------------------
+  const startLoadingAndRedirect = async (target: "resume" | "chatter" | "quiz") => {
+    setLoadingAction(true);
+    try {
+      const id = await ensureSubjectId();
+      router.push(`/dashboard/${target}?key=${key}&subjectId=${id}`);
+    } catch (e) {
+      console.error(e);
+      setLoadingAction(false);
+      alert("Impossible de créer le sujet (subjectId). Vérifie la console.");
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
-
-      {/*LOADER*/}
-      {loadingAction && (
+      {(loadingAction || creatingSubject) && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3">
             <span className="h-10 w-10 animate-spin rounded-full border-4 border-[#3FA9D9] border-t-transparent" />
-            <p className="text-[#3FA9D9] font-medium">Chargement…</p>
+            <p className="text-[#3FA9D9] font-medium">
+              {creatingSubject ? "Création du sujet…" : "Chargement…"}
+            </p>
           </div>
         </div>
       )}
@@ -88,7 +176,6 @@ function UploadSuccess() {
           <p className="text-2xl text-[#3FA9D9]">Révise plus vite</p>
         </div>
 
-        {/* Upload Area */}
         <div className="mb-10 border-2 rounded-lg p-8 bg-white">
           <div className="flex flex-col items-center justify-center gap-2">
             <div className="relative w-32 h-32">
@@ -112,11 +199,11 @@ function UploadSuccess() {
           </div>
         </div>
 
-        {/* Confirmation d’extraction */}
         {hasText ? (
           <div className="mb-6 inline-flex flex-wrap items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
             <span>✓PDF analysé</span>
             <span>• {(meta?.chars ?? sessText.length).toLocaleString()} caractères</span>
+            {subjectId ? <span>• subjectId: {subjectId}</span> : null}
           </div>
         ) : (
           <div className="mb-6 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
@@ -124,74 +211,24 @@ function UploadSuccess() {
           </div>
         )}
 
-        {/* Options Section */}
         <div className="flex flex-col items-center justify-center space-y-6">
           <h2 className="text-2xl text-gray-700">
             Commençons votre révision, choisissez une option :
           </h2>
 
           <div className="mt-6 flex flex-wrap gap-3 justify-center">
-
-            {/*Résumé → loader */}
-            <div onClick={() => startLoadingAndRedirect(`/dashboard/resume?key=${key}`)}>
+            <div onClick={() => startLoadingAndRedirect("resume")}>
               <OptionButton icon="/resume.png" label="Resume" />
             </div>
 
-            {/*Chat → loader */}
-            <div onClick={() => startLoadingAndRedirect(`/dashboard/chatter?key=${key}`)}>
+            <div onClick={() => startLoadingAndRedirect("chatter")}>
               <OptionButton icon="/chat.png" label="Chat" />
             </div>
 
-            {/*Quizz → loader */}
-            <div onClick={() => startLoadingAndRedirect(`/dashboard/quiz?key=${key}`)}>
+            <div onClick={() => startLoadingAndRedirect("quiz")}>
               <OptionButton icon="/quizz.png" label="Quizz" />
             </div>
-
-            {/*Changer de fichier → loader
-            <button
-              onClick={() => startLoadingAndRedirect("/dashboard/upload")}
-              className="rounded-full border-2 border-gray-300 px-6 py-2 text-gray-600 hover:bg-gray-50"
-            >
-              Changer de fichier
-            </button>
-             */}
           </div>
-        
-          {/* Commandes texte */}
-          {/*hasText && (
-            <div className="mt-6 w-full max-w-2xl">
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={() => setShowExtract((s) => !s)}
-                  className="rounded-full border-2 border-[#7CB6DB] text-[#7CB6DB] px-4 py-1.5 hover:bg-[#E8F6FF]"
-                >
-                  {showExtract ? "Masquer l’extrait" : "Voir un extrait"}
-                </button>
-
-                <button
-                  onClick={() => navigator.clipboard.writeText(sessText)}
-                  className="rounded-full border-2 border-gray-300 text-gray-700 px-4 py-1.5 hover:bg-gray-50"
-                >
-                  Copier le texte
-                </button>
-
-                <button
-                  onClick={downloadTxt}
-                  className="rounded-full border-2 border-gray-300 text-gray-700 px-4 py-1.5 hover:bg-gray-50"
-                >
-                  Télécharger (.txt)
-                </button>
-              </div>
-
-              {showExtract && (
-                <pre className="mt-3 whitespace-pre-wrap text-sm leading-6 bg-white border rounded-lg p-3 text-gray-700">
-                  {extractPreview}
-                  {sessText.length > extractPreview.length ? "…" : ""}
-                </pre>
-              )}
-            </div>
-          )*/}
-          
         </div>
       </main>
     </div>

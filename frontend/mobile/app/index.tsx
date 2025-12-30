@@ -1,189 +1,104 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
-    StatusBar,
-    SafeAreaView,
+  View,
+  Text,
+  StyleSheet,
+  StatusBar,
+  SafeAreaView,
+  Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import LottieView from 'lottie-react-native';
-
-interface MainScreenProps {
-    navigation?: any;
+import { useNavigation, useRouter } from 'expo-router';
+interface OnboardingScreenProps {
+  navigation?: any;
 }
 
-const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
-    const animationRef = useRef<LottieView>(null);
+const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
+  const router = useRouter()
 
-    useEffect(() => {
-        animationRef.current?.play();
-    }, []);
+  useEffect(() => {
+    setTimeout(() => {
+      router.push("/(auth)")
+    }, 2000);
+  }, [])
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-            <Text style={styles.logo}>StudyAI</Text>
 
-            <View style={styles.robotContainer}>
-                <LottieView
-                    ref={animationRef}
-                    source={require('@/assets/animations/robot.json')}
-                    autoPlay
-                    loop
-                    style={styles.robotAnimation}
-                />
-            </View>
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity
-                    style={styles.primaryButton}
-                    onPress={() => navigation?.navigate('Login')}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.primaryButtonText}>Connexion</Text>
-                </TouchableOpacity>
+      <Text style={styles.logo}>StudyAI</Text>
 
-                <TouchableOpacity
-                    style={styles.secondaryButton}
-                    onPress={() => navigation?.navigate('Register')}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.secondaryButtonText}>Inscription</Text>
-                </TouchableOpacity>
+      <View style={styles.content}>
+        <Text style={styles.title}>Dépose ton PDF, révise plus vite</Text>
 
-                <Text style={styles.socialText}>
-                    Ou connecte toi à partir de tes réseaux
-                </Text>
+        <Text style={styles.subtitle}>
+          StudyAI transforme tes cours{'\n'}
+          en quiz, résumés et échanges type chat pour{'\n'}
+          t'aider à mémoriser.
+        </Text>
 
-                <View style={styles.socialButtonsContainer}>
-                    <TouchableOpacity
-                        style={[styles.socialButton, styles.facebookButton]}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="logo-facebook" size={24} color="#fff" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.socialButton, styles.googleButton]}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="logo-google" size={24} color="#fff" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.socialButton, styles.linkedinButton]}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="logo-linkedin" size={24} color="#fff" />
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </SafeAreaView>
-    );
+        {/* Robot Image */}
+        <View style={styles.imageContainer}>
+          <Image
+            source={require('@/assets/images/robot-book.png')}
+            style={styles.robotImage}
+            resizeMode="contain"
+          />
+        </View>
+      </View>
+    </SafeAreaView>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    logo: {
-        fontSize: 36,
-        fontFamily: 'Kufam-Bold',
-        color: '#2C94CB',
-        textAlign: 'center',
-        marginTop: 40,
-        letterSpacing: 0.5,
-    },
-    robotContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: -50,
-    },
-    robotAnimation: {
-        width: 300,
-        height: 300,
-    },
-    buttonContainer: {
-        paddingHorizontal: 30,
-        paddingBottom: 40,
-    },
-    primaryButton: {
-        backgroundColor: '#2C94CB',
-        borderRadius: 30,
-        paddingVertical: 2,
-        alignItems: 'center',
-        marginBottom: 15,
-        shadowColor: '#2C94CB',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    primaryButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontFamily: 'Kufam-Bold',
-        letterSpacing: 0.5,
-    },
-    secondaryButton: {
-        backgroundColor: '#fff',
-        borderRadius: 30,
-        paddingVertical: 2,
-        alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: '#2C94CB',
-        marginBottom: 15,
-    },
-    secondaryButtonText: {
-        color: '#2C94CB',
-        fontSize: 18,
-        fontFamily: 'Kufam-Bold',
-        letterSpacing: 0.5,
-    },
-    socialText: {
-        textAlign: 'center',
-        color: '#666',
-        fontSize: 13,
-        fontFamily: 'Kufam-Regular',
-        marginBottom: 15,
-        marginTop: 10,
-    },
-    socialButtonsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        gap: 20,
-    },
-    socialButton: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    facebookButton: {
-        backgroundColor: '#3b5998',
-    },
-    googleButton: {
-        backgroundColor: '#DB4437',
-    },
-    linkedinButton: {
-        backgroundColor: '#0077B5',
-    },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  logo: {
+    fontSize: 36,
+    fontFamily: 'Kufam-Bold',
+    color: '#2C94CB',
+    textAlign: 'center',
+    marginTop: 80,
+    letterSpacing: 0.5,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 30,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 40,
+  },
+  title: {
+    fontSize: 24,
+    fontFamily: 'Kufam-Bold',
+    color: '#000',
+    textAlign: 'center',
+    marginTop: 60,
+    lineHeight: 32,
+  },
+  subtitle: {
+    fontSize: 15,
+    fontFamily: 'Kufam-Regular',
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginTop: 20,
+  },
+  imageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 40,
+  },
+  robotImage: {
+    width: '100%',
+    height: '100%',
+    maxWidth: 350,
+    maxHeight: 350,
+  },
 });
 
-export default MainScreen;
+export default OnboardingScreen;

@@ -9,22 +9,29 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
+import { logoStyle } from '@/styles/logo';
+import { useRouter } from 'expo-router';
 
 interface AuthIndexScreenProps {
     navigation?: any;
 }
 
-const AuthIndexScreen: React.FC<AuthIndexScreenProps> = ({ navigation }) => {
+const AuthIndexScreen: React.FC<AuthIndexScreenProps> = () => {
     const animationRef = useRef<LottieView>(null);
+
+    const router = useRouter();
 
     useEffect(() => {
         animationRef.current?.play();
     }, []);
 
+    const handleLogin = () => {
+        router.push("/(auth)/login")
+    }
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-            <Text style={styles.logo}>StudyAI</Text>
+            <Text style={logoStyle}>StudyAI</Text>
 
             <View style={styles.robotContainer}>
                 <LottieView
@@ -39,7 +46,7 @@ const AuthIndexScreen: React.FC<AuthIndexScreenProps> = ({ navigation }) => {
             <View style={styles.buttonContainer}>
                 <TouchableOpacity
                     style={styles.primaryButton}
-                    onPress={() => navigation?.navigate('Login')}
+                    onPress={handleLogin}
                     activeOpacity={0.8}
                 >
                     <Text style={styles.primaryButtonText}>Connexion</Text>
@@ -47,7 +54,7 @@ const AuthIndexScreen: React.FC<AuthIndexScreenProps> = ({ navigation }) => {
 
                 <TouchableOpacity
                     style={styles.secondaryButton}
-                    onPress={() => navigation?.navigate('Register')}
+                    // onPress={}
                     activeOpacity={0.8}
                 >
                     <Text style={styles.secondaryButtonText}>Inscription</Text>
@@ -80,7 +87,7 @@ const AuthIndexScreen: React.FC<AuthIndexScreenProps> = ({ navigation }) => {
                     </TouchableOpacity>
                 </View>
             </View>
-        </SafeAreaView>
+        </View>
     );
 };
 

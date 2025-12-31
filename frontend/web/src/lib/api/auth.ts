@@ -58,41 +58,17 @@ function friendlyLoginError(err: unknown): string {
 }
 
 function clearClientStorage() {
-  if (!isBrowser()) return;
+  if (typeof window === "undefined") return;
 
   try {
-    // ✅ sessionStorage : PDF / subject
-    sessionStorage.removeItem("activeSubjectId");
-    sessionStorage.removeItem("activePdfText");
-
-    // anciens noms éventuels
-    sessionStorage.removeItem("SubjectId");
-    sessionStorage.removeItem("userId");
-
-    // purge des keys par préfixes (pdfText:<key>, subjectId:<key>, etc.)
-    const ssKeys = Object.keys(sessionStorage);
-    for (const k of ssKeys) {
-      if (
-        k.startsWith("pdfText:") ||
-        k.startsWith("pdfName:") ||
-        k.startsWith("pdfBlobUrl:") ||
-        k.startsWith("pdfMeta:") ||
-        k.startsWith("subjectId:")
-      ) {
-        sessionStorage.removeItem(k);
-      }
-    }
-
-    // ✅ localStorage : auth + user
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("userid");
-    localStorage.removeItem("current_user");
-    localStorage.removeItem("SubjectId");
+    // ✅ option la plus simple : tout vider
+    sessionStorage.clear();
+    localStorage.clear();
   } catch (e) {
     console.error("clearClientStorage error:", e);
   }
 }
+
 
 // ---------- API calls ----------
 

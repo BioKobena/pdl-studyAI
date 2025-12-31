@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 /* ---------- Icons (simples) ---------- */
 const ChevronLeft = ({ className }: { className?: string }) => (
@@ -64,10 +65,6 @@ interface QuizResponse {
   quiz: BackendQuiz;
 }
 
-interface QuizService {
-  loadQuiz(): Promise<Question[]>;
-}
-
 /* ---------- Transform backend -> frontend ---------- */
 function transformBackendToFrontend(backendQuiz: BackendQuiz): Question[] {
   if (!backendQuiz || !backendQuiz.questions) {
@@ -90,52 +87,39 @@ function transformBackendToFrontend(backendQuiz: BackendQuiz): Question[] {
 }
 
 /* ---------- Service API ---------- */
-const apiQuizService: QuizService = {
-  async loadQuiz() {
-    // ✅ Nouveau mode : 1 PDF actif
-    const subjectId =
-      sessionStorage.getItem("activeSubjectId") ||
-      localStorage.getItem("SubjectId"); // fallback ancien flow
+async function loadQuizFromApi(subjectId: string): Promise<Question[]> {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
-    if (!subjectId) {
-      console.warn("No subjectId found (activeSubjectId/SubjectId)");
-      throw new Error("Aucun sujet sélectionné. Veuillez importer un PDF d'abord.");
-    }
+  const response = await fetch(`${base}/quiz/create`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+    },
+    body: JSON.stringify({ subjectId }),
+  });
 
-    const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+  if (!response.ok) {
+    if (response.status === 404) throw new Error("Quiz introuvable pour ce sujet");
+    if (response.status === 401) throw new Error("Authentification requise");
+    throw new Error(`Erreur API: ${response.status}`);
+  }
 
-    try {
-      const response = await fetch(`${base}/quiz/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-        },
-        body: JSON.stringify({ subjectId }),
-      });
+  const data: QuizResponse = await response.json();
 
-      if (!response.ok) {
-        if (response.status === 404) throw new Error("Quiz introuvable pour ce sujet");
-        if (response.status === 401) throw new Error("Authentification requise");
-        throw new Error(`Erreur API: ${response.status}`);
-      }
+  if (!data.quiz) {
+    throw new Error("Aucun quiz trouvé dans la réponse");
+  }
 
-      const data: QuizResponse = await response.json();
-
-      if (!data.quiz) {
-        throw new Error("Aucun quiz trouvé dans la réponse");
-      }
-
-      return transformBackendToFrontend(data.quiz);
-    } catch (error) {
-      console.error("Failed to load quiz from API:", error);
-      throw error instanceof Error ? error : new Error("Erreur lors du chargement du quiz");
-    }
-  },
-};
+  return transformBackendToFrontend(data.quiz);
+}
 
 /* ---------- UI Component ---------- */
 export function Component() {
+  const params = useSearchParams();
+  const key = params.get("key") || "";
+  const subjectIdFromUrl = params.get("subjectId") || "";
+
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -146,17 +130,46 @@ export function Component() {
 
   const tabsRef = useRef<HTMLDivElement>(null);
 
+  // ✅ 1) Réconcilier/Restaurer activeSubjectId (URL -> sessionStorage)
+  useEffect(() => {
+    const fromActive = sessionStorage.getItem("activeSubjectId") || "";
+    const fromKey = key ? sessionStorage.getItem(`subjectId:${key}`) || "" : "";
+    const legacy = localStorage.getItem("SubjectId") || "";
+
+    const resolved = subjectIdFromUrl || fromActive || fromKey || legacy;
+
+    if (resolved) {
+      sessionStorage.setItem("activeSubjectId", resolved);
+    }
+  }, [key, subjectIdFromUrl]);
+
+  // ✅ 2) Charger le quiz
   useEffect(() => {
     let alive = true;
     setLoading(true);
+    setError(null);
 
-    apiQuizService
-      .loadQuiz()
+    const resolved =
+      subjectIdFromUrl ||
+      sessionStorage.getItem("activeSubjectId") ||
+      (key ? sessionStorage.getItem(`subjectId:${key}`) : "") ||
+      localStorage.getItem("SubjectId") ||
+      "";
+
+    if (!resolved) {
+      setError("Aucun sujet sélectionné. Veuillez importer un PDF d'abord.");
+      setQuestions(null);
+      setLoading(false);
+      return;
+    }
+
+    loadQuizFromApi(resolved)
       .then((qs) => {
         if (!alive) return;
         setQuestions(qs);
         setSelectedAnswers(Array(qs.length).fill([]));
-        setError(null);
+        setCurrentQuestion(0);
+        setQuizCompleted(false);
       })
       .catch((e) => {
         if (!alive) return;
@@ -171,8 +184,9 @@ export function Component() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [key, subjectIdFromUrl]);
 
+  // centre l'item courant s'il y a overflow
   useEffect(() => {
     const el = tabsRef.current;
     if (!el) return;
@@ -274,6 +288,7 @@ export function Component() {
   const currentQuestionData = questions[currentQuestion];
   const currentSelectedAnswers = selectedAnswers[currentQuestion] || [];
 
+  /* ---------- Results ---------- */
   if (quizCompleted) {
     const finalScore = calculateScore();
 
@@ -286,7 +301,10 @@ export function Component() {
             </div>
             <h1 className="text-3xl font-bold text-slate-900">Quiz terminé !</h1>
             <p className="text-slate-600 mt-2">
-              Score: <span className="font-semibold">{finalScore}/{total}</span>{" "}
+              Score:{" "}
+              <span className="font-semibold">
+                {finalScore}/{total}
+              </span>{" "}
               ({Math.round((finalScore / total) * 100)}%)
             </p>
             <p className="text-sm text-slate-500 mt-1">
@@ -305,7 +323,8 @@ export function Component() {
               return (
                 <div
                   key={q.id}
-                  className={`rounded-lg border px-3 py-2 text-sm text-center ${
+                  className={`rounded-lg border px-3 py-2 text-sm text-center
+                  ${
                     isCorrect
                       ? "border-emerald-600 text-emerald-700 bg-emerald-50"
                       : "border-rose-600 text-rose-700 bg-rose-50"
@@ -340,6 +359,7 @@ export function Component() {
     );
   }
 
+  /* ---------- Quiz Screen ---------- */
   return (
     <div className="min-h-[calc(100vh-64px)] grid place-items-center bg-slate-50 px-4">
       <div className="w-full max-w-3xl max-h-[calc(100vh-64px-2rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg flex flex-col">
@@ -370,10 +390,18 @@ export function Component() {
                 >
                   <Gift
                     className={`w-6 h-6 ${
-                      isAnswered ? "text-sky-600" : isCurrent ? "text-sky-600" : "text-slate-300"
+                      isAnswered
+                        ? "text-sky-600"
+                        : isCurrent
+                        ? "text-sky-600"
+                        : "text-slate-300"
                     }`}
                   />
-                  <div className={`text-[11px] ${isCurrent ? "text-sky-700 font-medium" : "text-slate-600"}`}>
+                  <div
+                    className={`text-[11px] ${
+                      isCurrent ? "text-sky-700 font-medium" : "text-slate-600"
+                    }`}
+                  >
                     {i + 1}
                   </div>
                 </div>
@@ -403,8 +431,13 @@ export function Component() {
                   ? "bg-sky-50 border-sky-600 text-slate-900"
                   : "bg-white text-slate-700 border-slate-200 hover:border-sky-300 hover:bg-sky-50/40",
               ].join(" ");
+
               return (
-                <button key={index} className={cls} onClick={() => handleAnswerSelect(index)}>
+                <button
+                  key={index}
+                  className={cls}
+                  onClick={() => handleAnswerSelect(index)}
+                >
                   {option}
                 </button>
               );
@@ -422,7 +455,9 @@ export function Component() {
             </button>
 
             <div className="text-sm text-slate-600">
-              {currentSelectedAnswers.length > 0 ? "Réponse sélectionnée" : "Sélectionnez une réponse"}
+              {currentSelectedAnswers.length > 0
+                ? "Réponse sélectionnée"
+                : "Sélectionnez une réponse"}
             </div>
 
             <button

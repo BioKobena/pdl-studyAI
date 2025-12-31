@@ -3,22 +3,35 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Loader2, Bot, User } from "lucide-react";
 import { sendChatMessage } from "@/lib/api/chat";
+import { useSearchParams } from "next/navigation";
 
 export default function AIMessageBar() {
+  const params = useSearchParams();
+  const key = params.get("key") || "";
+  const subjectIdFromUrl = params.get("subjectId") || "";
+
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>(
-    []
-  );
+  const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () =>
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   useEffect(scrollToBottom, [messages]);
 
+  // ✅ Fix: restaurer activeSubjectId depuis URL / subjectId:key
+  useEffect(() => {
+    const fromActive = sessionStorage.getItem("activeSubjectId") || "";
+    const fromKey = key ? sessionStorage.getItem(`subjectId:${key}`) || "" : "";
+    const resolved = subjectIdFromUrl || fromActive || fromKey;
+
+    if (resolved) {
+      sessionStorage.setItem("activeSubjectId", resolved);
+    }
+  }, [key, subjectIdFromUrl]);
+
   const getUserId = () => {
-    const fromLocal = localStorage.getItem("userid");
+    // ✅ tu stockes "userId" (dans auth.ts). On garde aussi "userid" au cas où.
+    const fromLocal = localStorage.getItem("userId") || localStorage.getItem("userid");
     if (fromLocal) return fromLocal;
 
     try {
@@ -30,7 +43,12 @@ export default function AIMessageBar() {
   };
 
   const getActiveSubjectId = () => {
-    return sessionStorage.getItem("activeSubjectId") || "";
+    return (
+      subjectIdFromUrl ||
+      sessionStorage.getItem("activeSubjectId") ||
+      (key ? sessionStorage.getItem(`subjectId:${key}`) : "") ||
+      ""
+    );
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -40,7 +58,6 @@ export default function AIMessageBar() {
     const userMessage = input;
     setInput("");
 
-    // push user message
     setMessages((prev) => [...prev, { text: userMessage, isUser: true }]);
     setIsTyping(true);
 
@@ -53,11 +70,7 @@ export default function AIMessageBar() {
 
       const result = await sendChatMessage(userId, subjectId, userMessage);
 
-      // push AI message
-      setMessages((prev) => [
-        ...prev,
-        { text: result?.message ?? "Réponse vide.", isUser: false },
-      ]);
+      setMessages((prev) => [...prev, { text: result?.message ?? "Réponse vide.", isUser: false }]);
     } catch (err: any) {
       console.error(err);
       setMessages((prev) => [
@@ -86,16 +99,12 @@ export default function AIMessageBar() {
               Comment puis-je vous aider aujourd&apos;hui ?
             </p>
             <p className="text-gray-500 text-sm max-w-xs">
-              Posez une question, demandez une explication de cours ou lancez une
-              discussion.
+              Posez une question, demandez une explication de cours ou lancez une discussion.
             </p>
           </div>
         ) : (
           messages.map((msg, index) => (
-            <div
-              key={index}
-              className={`flex items-end gap-2 ${msg.isUser ? "justify-end" : ""}`}
-            >
+            <div key={index} className={`flex items-end gap-2 ${msg.isUser ? "justify-end" : ""}`}>
               {!msg.isUser && (
                 <Bot className="w-6 h-6 text-[#3FA9D9] bg-white p-1 rounded-full shadow-sm" />
               )}
@@ -134,10 +143,7 @@ export default function AIMessageBar() {
       </div>
 
       {/* Input */}
-      <form
-        onSubmit={handleSubmit}
-        className="p-4 bg-white border-t border-gray-200 rounded-b-2xl"
-      >
+      <form onSubmit={handleSubmit} className="p-4 bg-white border-t border-gray-200 rounded-b-2xl">
         <div className="relative">
           <input
             className="w-full bg-[#f0f7fb] border border-gray-300 rounded-full py-3 pl-4 pr-12 text-gray-700 placeholder:text-gray-400 focus:ring-2 focus:ring-[#3FA9D9] outline-none"
@@ -151,11 +157,7 @@ export default function AIMessageBar() {
             disabled={!input.trim() || isTyping}
             className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white p-2 rounded-full shadow transition disabled:opacity-50"
           >
-            {isTyping ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
+            {isTyping ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
       </form>

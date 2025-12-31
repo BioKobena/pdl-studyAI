@@ -87,7 +87,7 @@ const LoginScreen = () => {
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>Vous n'avez pas de compte ? </Text>
           <TouchableOpacity onPress={handleRegister}>
-            <Text style={styles.signupLink}>S'inscrire</Text>
+            <Text style={styles.signupLink} >S'inscrire</Text>
           </TouchableOpacity>
         </View>
       </View>

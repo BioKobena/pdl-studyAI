@@ -26,6 +26,7 @@ export async function sendChatMessage(
 
   const token = getToken();
 
+  console.log("userId : ", userId, "message : ", message, " subjectId : ", subjectId)
   try {
     const res = await fetch(
       `${base}/chat/message?userId=${encodeURIComponent(userId)}&subjectId=${encodeURIComponent(

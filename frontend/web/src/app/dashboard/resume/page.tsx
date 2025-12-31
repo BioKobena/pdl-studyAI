@@ -1,45 +1,30 @@
 "use client";
+
 import { withAuth } from "@/lib/api/withAuth.client";
 import { ResumePDFViewer } from "@/component/ui/resume-pdf-viewer";
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { summarizeExtractText } from "@/lib/api/summary";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 function App() {
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const params = useSearchParams();
-  const key = params.get("key") || "";
-  const subjectIdFromUrl = params.get("subjectId") || "";
-
   useEffect(() => {
     const fetchSummary = async () => {
       setLoading(true);
 
-      // ✅ garde-fou si on arrive sans params
-      if (!key && !subjectIdFromUrl) {
-        setSummary("Erreur : paramètres manquants.");
-        setLoading(false);
-        return;
-      }
-
       try {
-        // ✅ fallback si subjectId pas dans l’URL
-        const subjectId =
-          subjectIdFromUrl ||
-          (key ? sessionStorage.getItem(`subjectId:${key}`) : "") ||
-          "";
+        // ✅ mode "1 seul PDF actif"
+        const subjectId = sessionStorage.getItem("activeSubjectId") || "";
 
         if (!subjectId) {
-          setSummary("Erreur : subjectId introuvable (aucun sujet associé).");
-          setLoading(false);
+          setSummary("Erreur : aucun PDF actif (subjectId introuvable).");
           return;
         }
 
-        // ✅ appeler l’API avec le bon subjectId
         const res = await summarizeExtractText(subjectId);
 
         if (res?.resume?.texteResume) {
@@ -56,7 +41,7 @@ function App() {
     };
 
     fetchSummary();
-  }, [key, subjectIdFromUrl]);
+  }, []);
 
   return (
     <main className="max-w-7xl mx-auto px-6 py-8 relative">
@@ -76,6 +61,7 @@ function App() {
         >
           <ArrowLeft size={25} strokeWidth={3} />
         </button>
+
         <h1 className="text-[#3FA9D9] text-2xl uppercase tracking-wide">
           Votre Résumé
         </h1>

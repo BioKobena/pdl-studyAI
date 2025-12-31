@@ -6,9 +6,9 @@ import { sendChatMessage } from "@/lib/api/chat";
 
 export default function AIMessageBar() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<
-    { text: string; isUser: boolean }[]
-  >([]);
+  const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>(
+    []
+  );
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -16,6 +16,22 @@ export default function AIMessageBar() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
   useEffect(scrollToBottom, [messages]);
+
+  const getUserId = () => {
+    const fromLocal = localStorage.getItem("userid");
+    if (fromLocal) return fromLocal;
+
+    try {
+      const currentUser = JSON.parse(localStorage.getItem("current_user") || "{}");
+      return currentUser?.id || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getActiveSubjectId = () => {
+    return sessionStorage.getItem("activeSubjectId") || "";
+  };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -26,21 +42,35 @@ export default function AIMessageBar() {
 
     // push user message
     setMessages((prev) => [...prev, { text: userMessage, isUser: true }]);
-    
     setIsTyping(true);
 
-    const userId = localStorage.getItem("userId");
-    const subjectId = localStorage.getItem("SubjectId")
-    const result= await sendChatMessage(userId!,subjectId!, userMessage)
-    setIsTyping(false);
+    try {
+      const userId = getUserId();
+      const subjectId = getActiveSubjectId();
 
-    // push AI message
-    setMessages((prev) => [...prev, { text: result.message, isUser: false }]);
+      if (!userId) throw new Error("Utilisateur non connecté (userId introuvable).");
+      if (!subjectId) throw new Error("Aucun PDF actif : subjectId introuvable.");
+
+      const result = await sendChatMessage(userId, subjectId, userMessage);
+
+      // push AI message
+      setMessages((prev) => [
+        ...prev,
+        { text: result?.message ?? "Réponse vide.", isUser: false },
+      ]);
+    } catch (err: any) {
+      console.error(err);
+      setMessages((prev) => [
+        ...prev,
+        { text: err?.message ?? "Erreur lors de l’envoi du message.", isUser: false },
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (
     <div className="w-full mx-auto h-[600px] rounded-2xl shadow-xl bg-gradient-to-br from-[#f3faff] to-[#e6f4fb] border border-[#3FA9D9]/20 flex flex-col">
-
       {/* Header */}
       <div className="p-4 bg-[#3FA9D9] text-white rounded-t-2xl flex items-center gap-3 shadow-md">
         <Bot className="w-6 h-6" />
@@ -53,19 +83,18 @@ export default function AIMessageBar() {
           <div className="flex flex-col items-center justify-center h-full text-center space-y-2">
             <Bot className="w-14 h-14 text-[#3FA9D9]" />
             <p className="text-[#3FA9D9] text-lg font-medium">
-              Comment puis-je vous aider aujourd'hui ?
+              Comment puis-je vous aider aujourd&apos;hui ?
             </p>
             <p className="text-gray-500 text-sm max-w-xs">
-              Posez une question, demandez une explication de cours ou lancez une discussion.
+              Posez une question, demandez une explication de cours ou lancez une
+              discussion.
             </p>
           </div>
         ) : (
           messages.map((msg, index) => (
             <div
               key={index}
-              className={`flex items-end gap-2 ${
-                msg.isUser ? "justify-end" : ""
-              }`}
+              className={`flex items-end gap-2 ${msg.isUser ? "justify-end" : ""}`}
             >
               {!msg.isUser && (
                 <Bot className="w-6 h-6 text-[#3FA9D9] bg-white p-1 rounded-full shadow-sm" />
@@ -119,7 +148,7 @@ export default function AIMessageBar() {
 
           <button
             type="submit"
-            disabled={!input.trim()}
+            disabled={!input.trim() || isTyping}
             className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white p-2 rounded-full shadow transition disabled:opacity-50"
           >
             {isTyping ? (

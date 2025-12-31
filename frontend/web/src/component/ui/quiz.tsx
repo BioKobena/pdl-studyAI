@@ -4,42 +4,17 @@ import { useEffect, useRef, useState } from "react";
 
 /* ---------- Icons (simples) ---------- */
 const ChevronLeft = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M15 19l-7-7 7-7"
-    />
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
   </svg>
 );
 const ChevronRight = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M9 5l7 7-7 7"
-    />
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
   </svg>
 );
 const Gift = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    fill="currentColor"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
+  <svg className={className} fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -49,12 +24,7 @@ const Gift = ({ className }: { className?: string }) => (
   </svg>
 );
 const Trophy = ({ className }: { className?: string }) => (
-  <svg
-    className={className}
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -69,8 +39,8 @@ interface Question {
   id: number;
   question: string;
   options: string[];
-  correctAnswers: number[]; // Tableau d'indices des réponses correctes
-  userAnswers: number[]; // Tableau d'indices des réponses sélectionnées par l'utilisateur
+  correctAnswers: number[];
+  userAnswers: number[];
 }
 
 interface BackendQuestion {
@@ -94,54 +64,46 @@ interface QuizResponse {
   quiz: BackendQuiz;
 }
 
-
 interface QuizService {
   loadQuiz(): Promise<Question[]>;
 }
 
-// Fonction pour transformer les données du backend vers le format frontend
+/* ---------- Transform backend -> frontend ---------- */
 function transformBackendToFrontend(backendQuiz: BackendQuiz): Question[] {
   if (!backendQuiz || !backendQuiz.questions) {
     throw new Error("Invalid quiz data from backend");
   }
 
-  console.log("Backend quiz questions:", backendQuiz.questions);
-  console.log("Number of questions from backend:", backendQuiz.questions.length);
-
   return backendQuiz.questions.map((q, index) => {
-    // Récupérer tous les indices des réponses correctes
     const correctIndices = q.reponses
-      .map((reponse, idx) => reponse.isCorrect ? idx : -1)
-      .filter(idx => idx !== -1);
-
-    console.log(`Question ${index + 1}:`, {
-      content: q.content,
-      reponses: q.reponses,
-      correctIndices: correctIndices
-    });
+      .map((reponse, idx) => (reponse.isCorrect ? idx : -1))
+      .filter((idx) => idx !== -1);
 
     return {
       id: q.id || index + 1,
       question: q.content,
-      options: q.reponses.map(r => r.content),
-      correctAnswers: correctIndices.length > 0 ? correctIndices : [0], // Fallback à la première réponse si aucune correcte
-      userAnswers: []
+      options: q.reponses.map((r) => r.content),
+      correctAnswers: correctIndices.length > 0 ? correctIndices : [0],
+      userAnswers: [],
     };
   });
 }
 
-// Service API avec intégration backend
+/* ---------- Service API ---------- */
 const apiQuizService: QuizService = {
   async loadQuiz() {
-    const subjectId = localStorage.getItem("SubjectId");
-    
+    // ✅ Nouveau mode : 1 PDF actif
+    const subjectId =
+      sessionStorage.getItem("activeSubjectId") ||
+      localStorage.getItem("SubjectId"); // fallback ancien flow
+
     if (!subjectId) {
-      console.warn("No SubjectId found in localStorage");
-      throw new Error("Aucun sujet sélectionné. Veuillez sélectionner un sujet d'abord.");
+      console.warn("No subjectId found (activeSubjectId/SubjectId)");
+      throw new Error("Aucun sujet sélectionné. Veuillez importer un PDF d'abord.");
     }
 
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
-    
+
     try {
       const response = await fetch(`${base}/quiz/create`, {
         method: "POST",
@@ -152,39 +114,24 @@ const apiQuizService: QuizService = {
         body: JSON.stringify({ subjectId }),
       });
 
-      console.log("Response status:", response.status);
-
       if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Quiz introuvable pour ce sujet");
-        } else if (response.status === 401) {
-          throw new Error("Authentification requise");
-        } else {
-          throw new Error(`Erreur API: ${response.status}`);
-        }
+        if (response.status === 404) throw new Error("Quiz introuvable pour ce sujet");
+        if (response.status === 401) throw new Error("Authentification requise");
+        throw new Error(`Erreur API: ${response.status}`);
       }
 
       const data: QuizResponse = await response.json();
-      console.log("Quiz created:", data);
 
       if (!data.quiz) {
         throw new Error("Aucun quiz trouvé dans la réponse");
       }
 
-      const transformedQuestions = transformBackendToFrontend(data.quiz);
-      console.log("Transformed questions:", transformedQuestions);
-      console.log("Number of transformed questions:", transformedQuestions.length);
-
-      return transformedQuestions;
+      return transformBackendToFrontend(data.quiz);
     } catch (error) {
       console.error("Failed to load quiz from API:", error);
-      if (error instanceof Error) {
-        throw error; // Propager l'erreur originale
-      } else {
-        throw new Error("Erreur lors du chargement du quiz");
-      }
+      throw error instanceof Error ? error : new Error("Erreur lors du chargement du quiz");
     }
-  }
+  },
 };
 
 /* ---------- UI Component ---------- */
@@ -197,19 +144,17 @@ export function Component() {
   const [selectedAnswers, setSelectedAnswers] = useState<number[][]>([]);
   const [quizCompleted, setQuizCompleted] = useState(false);
 
-  // ref pour auto-centre l'indicateur courant
   const tabsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    
+
     apiQuizService
       .loadQuiz()
       .then((qs) => {
         if (!alive) return;
         setQuestions(qs);
-        // Correction : initialiser avec un tableau de tableaux vides
         setSelectedAnswers(Array(qs.length).fill([]));
         setError(null);
       })
@@ -222,22 +167,18 @@ export function Component() {
         if (!alive) return;
         setLoading(false);
       });
-      
+
     return () => {
       alive = false;
     };
   }, []);
 
-  // centre l'item courant s'il y a overflow
   useEffect(() => {
     const el = tabsRef.current;
     if (!el) return;
-    const active = el.querySelector<HTMLDivElement>(
-      `[data-idx="${currentQuestion}"]`,
-    );
+    const active = el.querySelector<HTMLDivElement>(`[data-idx="${currentQuestion}"]`);
     if (active) {
-      const offset =
-        active.offsetLeft - (el.clientWidth - active.clientWidth) / 2;
+      const offset = active.offsetLeft - (el.clientWidth - active.clientWidth) / 2;
       el.scrollTo({ left: offset, behavior: "smooth" });
     }
   }, [currentQuestion, questions]);
@@ -246,26 +187,20 @@ export function Component() {
     if (!questions) return;
 
     const currentAnswers = [...selectedAnswers];
-    // Pour un QCM simple, on remplace la sélection précédente
     currentAnswers[currentQuestion] = [answerIndex];
-    
     setSelectedAnswers(currentAnswers);
 
-    // Mettre à jour les userAnswers dans la question
-    const updatedQuestions = questions.map((q, index) => 
-      index === currentQuestion 
-        ? { ...q, userAnswers: [answerIndex] }
-        : q
+    const updatedQuestions = questions.map((q, index) =>
+      index === currentQuestion ? { ...q, userAnswers: [answerIndex] } : q
     );
     setQuestions(updatedQuestions);
   };
 
   const handleNext = () => {
     if (!questions) return;
-    
+
     if (currentQuestion < questions.length - 1) {
-      const next = currentQuestion + 1;
-      setCurrentQuestion(next);
+      setCurrentQuestion(currentQuestion + 1);
     } else {
       setQuizCompleted(true);
     }
@@ -273,8 +208,7 @@ export function Component() {
 
   const handlePrevious = () => {
     if (currentQuestion === 0) return;
-    const prev = currentQuestion - 1;
-    setCurrentQuestion(prev);
+    setCurrentQuestion(currentQuestion - 1);
   };
 
   const calculateScore = (): number => {
@@ -283,17 +217,17 @@ export function Component() {
     return questions.reduce((score, question, index) => {
       const userAnswers = selectedAnswers[index] || [];
       const correctAnswers = question.correctAnswers;
-      
-      // Vérifier si les réponses utilisateur correspondent aux réponses correctes
-      const isCorrect = userAnswers.length === correctAnswers.length && 
-                       userAnswers.every(answer => correctAnswers.includes(answer));
-      
+
+      const isCorrect =
+        userAnswers.length === correctAnswers.length &&
+        userAnswers.every((answer) => correctAnswers.includes(answer));
+
       return isCorrect ? score + 1 : score;
     }, 0);
   };
 
   const getAnsweredCount = (): number => {
-    return selectedAnswers.filter(answers => answers.length > 0).length;
+    return selectedAnswers.filter((answers) => answers.length > 0).length;
   };
 
   if (loading) {
@@ -340,10 +274,9 @@ export function Component() {
   const currentQuestionData = questions[currentQuestion];
   const currentSelectedAnswers = selectedAnswers[currentQuestion] || [];
 
-  /* ---------- Results ---------- */
   if (quizCompleted) {
     const finalScore = calculateScore();
-    
+
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="w-full max-w-4xl rounded-xl border border-slate-200 bg-white shadow-lg">
@@ -353,30 +286,26 @@ export function Component() {
             </div>
             <h1 className="text-3xl font-bold text-slate-900">Quiz terminé !</h1>
             <p className="text-slate-600 mt-2">
-              Score:{" "}
-              <span className="font-semibold">
-                {finalScore}/{total}
-              </span>{" "}
+              Score: <span className="font-semibold">{finalScore}/{total}</span>{" "}
               ({Math.round((finalScore / total) * 100)}%)
             </p>
             <p className="text-sm text-slate-500 mt-1">
-              {total} question{total > 1 ? 's' : ''} au total
+              {total} question{total > 1 ? "s" : ""} au total
             </p>
           </div>
 
-          {/* Grille responsive des questions */}
           <div className="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {questions.map((q, i) => {
               const userAnswers = selectedAnswers[i] || [];
               const correctAnswers = q.correctAnswers;
-              const isCorrect = userAnswers.length === correctAnswers.length && 
-                               userAnswers.every(answer => correctAnswers.includes(answer));
-              
+              const isCorrect =
+                userAnswers.length === correctAnswers.length &&
+                userAnswers.every((answer) => correctAnswers.includes(answer));
+
               return (
                 <div
                   key={q.id}
-                  className={`rounded-lg border px-3 py-2 text-sm text-center
-                  ${
+                  className={`rounded-lg border px-3 py-2 text-sm text-center ${
                     isCorrect
                       ? "border-emerald-600 text-emerald-700 bg-emerald-50"
                       : "border-rose-600 text-rose-700 bg-rose-50"
@@ -394,11 +323,10 @@ export function Component() {
                 setQuizCompleted(false);
                 setCurrentQuestion(0);
                 setSelectedAnswers(Array(questions.length).fill([]));
-                
-                // Réinitialiser les userAnswers
-                const resetQuestions = questions.map(q => ({
+
+                const resetQuestions = questions.map((q) => ({
                   ...q,
-                  userAnswers: []
+                  userAnswers: [],
                 }));
                 setQuestions(resetQuestions);
               }}
@@ -412,12 +340,10 @@ export function Component() {
     );
   }
 
-  /* ---------- Quiz Screen ---------- */
   return (
-    <div className="min-h-[calc(100vh-64px)] grid place-items-center bg-slate-50 px-4 ">
+    <div className="min-h-[calc(100vh-64px)] grid place-items-center bg-slate-50 px-4">
       <div className="w-full max-w-3xl max-h-[calc(100vh-64px-2rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg flex flex-col">
         <div className="p-6">
-          {/* Header */}
           <div className="flex justify-between items-center mb-4">
             <div className="text-sm text-slate-600">
               Question {currentQuestion + 1} sur {total}
@@ -427,7 +353,6 @@ export function Component() {
             </div>
           </div>
 
-          {/* Indicateurs scrollables pour n questions */}
           <div
             ref={tabsRef}
             className="mb-4 flex gap-6 overflow-x-auto no-scrollbar pb-2"
@@ -445,16 +370,10 @@ export function Component() {
                 >
                   <Gift
                     className={`w-6 h-6 ${
-                      isAnswered
-                        ? "text-sky-600"
-                        : isCurrent
-                          ? "text-sky-600"
-                          : "text-slate-300"
+                      isAnswered ? "text-sky-600" : isCurrent ? "text-sky-600" : "text-slate-300"
                     }`}
                   />
-                  <div
-                    className={`text-[11px] ${isCurrent ? "text-sky-700 font-medium" : "text-slate-600"}`}
-                  >
+                  <div className={`text-[11px] ${isCurrent ? "text-sky-700 font-medium" : "text-slate-600"}`}>
                     {i + 1}
                   </div>
                 </div>
@@ -462,7 +381,6 @@ export function Component() {
             })}
           </div>
 
-          {/* Barre de progression dynamique */}
           <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden mb-8">
             <div
               className="bg-sky-600 h-2 rounded-full transition-all duration-700 ease-out"
@@ -470,13 +388,11 @@ export function Component() {
             />
           </div>
 
-          {/* Question */}
           <h2 className="text-2xl font-bold text-slate-900 leading-tight mb-6">
             {currentQuestionData.question}
           </h2>
         </div>
 
-        {/* Options */}
         <div className="p-6">
           <div className="space-y-3 mb-6">
             {currentQuestionData.options.map((option, index) => {
@@ -488,18 +404,13 @@ export function Component() {
                   : "bg-white text-slate-700 border-slate-200 hover:border-sky-300 hover:bg-sky-50/40",
               ].join(" ");
               return (
-                <button
-                  key={index}
-                  className={cls}
-                  onClick={() => handleAnswerSelect(index)}
-                >
+                <button key={index} className={cls} onClick={() => handleAnswerSelect(index)}>
                   {option}
                 </button>
               );
             })}
           </div>
 
-          {/* Navigation */}
           <div className="flex justify-between items-center">
             <button
               onClick={handlePrevious}

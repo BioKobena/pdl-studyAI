@@ -51,7 +51,13 @@ function UploadSuccess() {
 
     // subjectId déjà créé ?
     const existingSubjectId = sessionStorage.getItem(`subjectId:${key}`) || "";
-    if (existingSubjectId) setSubjectId(existingSubjectId);
+    if (existingSubjectId) {
+      setSubjectId(existingSubjectId);
+
+      // ✅ mode "1 seul PDF actif"
+      sessionStorage.setItem("activeSubjectId", existingSubjectId);
+      sessionStorage.setItem("activePdfName", name || "Document"); // optionnel
+    }
 
     return () => {
       if (blobUrl) URL.revokeObjectURL(blobUrl);
@@ -81,13 +87,22 @@ function UploadSuccess() {
 
     // déjà en mémoire ?
     const cached = sessionStorage.getItem(`subjectId:${key}`);
-    if (cached) return cached;
+    if (cached) {
+      // ✅ garantir activeSubjectId même si déjà créé
+      sessionStorage.setItem("activeSubjectId", cached);
+      sessionStorage.setItem("activePdfName", sessName || "Document"); // optionnel
+      return cached;
+    }
 
     // si création déjà en cours -> attendre
     if (creatingSubject) {
       await new Promise((r) => setTimeout(r, 250));
       const cachedAfter = sessionStorage.getItem(`subjectId:${key}`);
-      if (cachedAfter) return cachedAfter;
+      if (cachedAfter) {
+        sessionStorage.setItem("activeSubjectId", cachedAfter);
+        sessionStorage.setItem("activePdfName", sessName || "Document"); // optionnel
+        return cachedAfter;
+      }
     }
 
     setCreatingSubject(true);
@@ -112,8 +127,14 @@ function UploadSuccess() {
       }
 
       const idStr = String(id);
+
+      // stock key-specific (utile pour debug / retour)
       sessionStorage.setItem(`subjectId:${key}`, idStr);
       setSubjectId(idStr);
+
+      // mode "1 seul PDF actif"
+      sessionStorage.setItem("activeSubjectId", idStr);
+      sessionStorage.setItem("activePdfName", sessName || "Document"); // optionnel
 
       return idStr;
     } finally {
@@ -126,31 +147,28 @@ function UploadSuccess() {
   // -------------------------------------------------------
   useEffect(() => {
     if (!key) return;
-
-    // ✅ on attend que le texte soit vraiment chargé
     if (!sessText.trim()) return;
-
-    // ✅ si déjà créé, rien à faire
     if (subjectId) return;
 
-    // ✅ anti double call dev
     if (createOnceRef.current) return;
     createOnceRef.current = true;
 
     ensureSubjectId().catch((e) => {
       console.error("ensureSubjectId auto:", e);
-      createOnceRef.current = false; // permet retry (clic)
+      createOnceRef.current = false; // permet retry
     });
   }, [key, sessText, subjectId, ensureSubjectId]);
 
   // -------------------------------------------------------
-  // 4) Redirection : garantit subjectId + passe en URL
+  // 4) Redirection : garantit subjectId puis go sans params
   // -------------------------------------------------------
   const startLoadingAndRedirect = async (target: "resume" | "chatter" | "quiz") => {
     setLoadingAction(true);
     try {
-      const id = await ensureSubjectId();
-      router.push(`/dashboard/${target}?key=${key}&subjectId=${id}`);
+      await ensureSubjectId();
+
+      // ✅ plus besoin de passer subjectId/key dans l’URL
+      router.push(`/dashboard/${target}`);
     } catch (e) {
       console.error(e);
       setLoadingAction(false);

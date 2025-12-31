@@ -132,15 +132,3 @@ npx expo start
 - Variables manquantes : vérifier `.env` et redémarrer les services.
 
 ---
-
-## Bonnes pratiques & sécurité
-
-- **Ne commitez jamais** les identifiants ou secrets en clair (mot de passe, URI avec credentials). Utilisez des variables d'environnement ou un secret manager.
-- Révoquez les credentials exposés et régénérez-les si des secrets ont été trouvés dans le repo.
-
----
-
-## Prochaines étapes recommandées
-
-- Ajouter un script de démarrage global (root `Makefile` ou scripts npm) pour automatiser le lancement multi‑services.
-- Ajouter une documentation CI (GitHub Actions) pour build/test/docker.

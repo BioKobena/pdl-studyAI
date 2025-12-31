@@ -158,9 +158,3 @@ Livrables : code source, rapport technique, documentation Swagger, présentation
 - Licence : à définir (ajouter `LICENSE`)
 - Contact / support : ouvrir une issue
 
-L’application développée, nommée **StudyAI**, vise à assister les étudiants dans leurs révisions grâce à l’intelligence artificielle.  
-Elle permet notamment l’analyse de documents pédagogiques et la génération automatique de contenus pédagogiques tels que des résumés, des quiz et des réponses interactives.
-
-Ce dépôt contient **l’implémentation complète de la partie backend** de l’application.
-
----

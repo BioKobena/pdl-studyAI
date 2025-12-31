@@ -1,4 +1,4 @@
-# StudyAI 🚀
+# StudyAI 
 
 **Outil d’aide à la révision (web & mobile) basé sur l’IA**  
 StudyAI facilite la révision en extrayant, résumant et générant des quiz à partir de documents (PDF, Word, TXT), et propose un chat contextuel alimenté par les contenus uploadés.

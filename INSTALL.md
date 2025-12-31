@@ -1,4 +1,4 @@
-# INSTALLATION — StudyAI 🚀
+# INSTALLATION — StudyAI 
 
 Ce document explique comment préparer l'environnement et lancer les différents composants du projet StudyAI (backend, frontend web, mobile) en local ou avec Docker. Les commandes ci‑dessous sont fournies pour Windows (PowerShell) mais sont similaires sur macOS / Linux.
 

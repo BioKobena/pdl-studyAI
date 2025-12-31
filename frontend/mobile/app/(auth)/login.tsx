@@ -28,6 +28,10 @@ const LoginScreen = () => {
   const handleRegister = () => {
     router.push("/(auth)/register")
   }
+
+  const handleHome = () => {
+    router.push("/home")
+  }
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style='dark' animated />
@@ -75,7 +79,7 @@ const LoginScreen = () => {
         <TouchableOpacity
           style={styles.loginButton}
           activeOpacity={0.8}
-          onPress={() => handleLogin}
+          onPress={handleHome}
         >
           <Text style={styles.loginButtonText}>Connexion</Text>
         </TouchableOpacity>

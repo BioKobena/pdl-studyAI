@@ -63,6 +63,12 @@ if (res.status === 401) {
   }
 
   if (res.status === 204) return undefined as unknown as T;
+  if (res.status === 401) {
+  setToken(null);
+  if (typeof window !== "undefined") {
+    window.location.href = "/login";   // <<< ajoute ceci
+  }
+ }
 
   // res.json() -> permet de lire la reponse sous forme de données utilisables 
   const isJson = res.headers.get("content-type")?.includes("application/json");

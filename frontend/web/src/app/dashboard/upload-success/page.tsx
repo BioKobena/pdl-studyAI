@@ -4,41 +4,99 @@ import { useState, useEffect, useMemo } from 'react';
 import { FileText } from 'lucide-react';
 import OptionButton from "../../../component/ui/option-button";
 import { useSearchParams } from 'next/navigation';
+import { createSubject } from "@/lib/api/subject";
+import { withAuth } from '@/lib/api/withAuth.client';
+type PdfMeta = { chars: number; ms?: number; pages?: number };
 
-type PdfMeta = { chars: number; ms?: number; pages?: number }; 
-
-export default function UploadSuccess() {
+function UploadSuccess() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const params = useSearchParams();
   const key = params.get('key') || '';
+  console.log("Key from params : ", key);
 
   const [sessName, setSessName] = useState<string>('');
   const [sessBlobUrl, setSessBlobUrl] = useState<string>('');
   const [sessText, setSessText] = useState<string>('');
-  const [meta, setMeta] = useState<PdfMeta | null>(null);               
-  const [showExtract, setShowExtract] = useState(false);                 
+  const [meta, setMeta] = useState<PdfMeta | null>(null);
+  const [showExtract, setShowExtract] = useState(false);
 
   useEffect(() => {
     if (!key) return;
-    const name = sessionStorage.getItem(`pdfName:${key}`) || '';
-    const blob = sessionStorage.getItem(`pdfBlobUrl:${key}`) || '';
-    const text = sessionStorage.getItem(`pdfText:${key}`) || '';
-    const metaRaw = sessionStorage.getItem(`pdfMeta:${key}`);            
+
+    const name = sessionStorage.getItem(`pdfName:${key}`) || "";
+    const blob = sessionStorage.getItem(`pdfBlobUrl:${key}`) || "";
+    const text = sessionStorage.getItem(`pdfText:${key}`) || "";
+    const metaRaw = sessionStorage.getItem(`pdfMeta:${key}`);
 
     setSessName(name);
     setSessBlobUrl(blob);
     setSessText(text);
 
     if (metaRaw) {
-      try { setMeta(JSON.parse(metaRaw) as PdfMeta); } catch {}
+      try {
+        setMeta(JSON.parse(metaRaw) as PdfMeta);
+      } catch {
+        setMeta({ chars: text.length });
+      }
     } else {
-      setMeta({ chars: text.length });                                   
+      setMeta({ chars: text.length });
     }
 
-    return () => { if (blob) URL.revokeObjectURL(blob); };
+    //Lancer la création du subject une fois que le texte est chargé
+
+    // 
+    if (text && text.trim().length > 0) {
+      /**
+       * @marlenegohi 
+       * hasBeenCreated n'existe pas c'est pourquoi il cré à chaque fois un nouveau id pour les documents, il va falloir le géré.
+       * La logique à suivre est de faire un setItem avant de faire le getItem pour "subjectCreated"
+       * J'ai parcouru tout le code mais j'ai pas vu de "hasBeenCreated" ou de "subjectCreated" donc si tu peux revoir ça, ça sera cool.  
+       *  */
+      const hasBeenCreated = sessionStorage.getItem(`subjectCreated:${key}`);
+      console.log("hasBeenCreated : ", hasBeenCreated)
+      const userId = localStorage.getItem("userId");
+      /**
+       * @marlenegohi
+       * Ici j'ai changé le hasBeenCreated que t'avais pour vérifier avec le "key"
+       * En vrai, tu peux voir une autre approche pour le faire, j'ai juste tester ça, je te laisse la main pour le reste.
+       */
+      if (key === null) {
+        (async () => {
+          try {
+            const res = await createSubject({
+              userId: userId,
+              title: name || "Document sans titre",
+              extractText: text,
+            });
+
+            console.log("Sujet créé :", res);
+
+            const subjectId = res?.subject?.id;
+            if (subjectId) {
+              localStorage.setItem("SubjectId", subjectId);
+              console.log("Subject ID sauvegardé :", subjectId);
+            } else {
+              console.warn("Aucun ID trouvé dans la réponse :", res);
+            }
+
+          } catch (err: unknown) {
+            if (err instanceof Error) {
+              console.error("Erreur lors de la création du subject :", err.message);
+            } else {
+              console.error("Erreur lors de la création du subject :", String(err));
+            }
+          }
+        })();
+      }
+    }
+
+    return () => {
+      if (blob) URL.revokeObjectURL(blob);
+    };
   }, [key]);
+
 
   const isScan = useMemo(() => key && sessText.trim().length === 0, [key, sessText]);
   const hasText = useMemo(() => sessText.trim().length > 0, [sessText]); // AJOUT
@@ -131,20 +189,20 @@ export default function UploadSuccess() {
           <h2 className="text-2xl text-gray-700">Commençons votre révision, choisissez une option :</h2>
 
           <div className="flex flex-wrap gap-6 justify-center mt-8">
-           
+
           </div>
 
           {/* barre d’actions concrètes avec la key */}
           {key && (
             <div className="mt-6 flex flex-wrap gap-3 justify-center">
-                 <Link rel="stylesheet" href={`/dashboard/resume?key=${key}`} >
+              <Link rel="stylesheet" href={`/dashboard/resume?key=${key}`} >
                 <OptionButton icon="/resume.png" label="Résumé" />
-                </Link>
-                <OptionButton icon="/chat.png" label="Chat" />
-                <Link rel="stylesheet" href="/dashboard/quiz">
-                 <OptionButton icon="/quizz.png" label="Quizz" />
-                 </Link>
-              
+              </Link>
+              <OptionButton icon="/chat.png" label="Chat" />
+              <Link rel="stylesheet" href="/dashboard/quiz">
+                <OptionButton icon="/quizz.png" label="Quizz" />
+              </Link>
+
               <a
                 href="/dashboard/upload"
                 className="rounded-full border-2 border-gray-300 px-6 py-2 text-gray-600 hover:bg-gray-50"
@@ -180,15 +238,16 @@ export default function UploadSuccess() {
 
               {showExtract && (
                 <pre className="mt-3 whitespace-pre-wrap text-sm leading-6 bg-white border rounded-lg p-3 text-gray-700">
-                    {extractPreview}{sessText.length > extractPreview.length ? '…' : ''}
+                  {extractPreview}{sessText.length > extractPreview.length ? '…' : ''}
                 </pre>
               )}
             </div>
           )}
         </div>
 
-       
+
       </main>
     </div>
   );
 }
+export default withAuth(UploadSuccess);

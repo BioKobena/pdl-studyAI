@@ -1,14 +1,11 @@
-'use client';
+"use client";
 import { Component } from "@/component/ui/quiz";
 import { withAuth } from "@/lib/api/withAuth.client";
-import { main } from "framer-motion/client";
-
- function DemoOne() {
+function DemoOne() {
   return (
-   < main className="flex-1 p-8 bg-gray-50">
+    <main className="flex-1 p-8 bg-gray-50">
       <Component />
     </main>
-)
-
+  );
 }
 export default withAuth(DemoOne);

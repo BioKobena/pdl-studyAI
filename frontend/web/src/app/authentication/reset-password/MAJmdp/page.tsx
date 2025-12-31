@@ -1,19 +1,20 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function VerifiedPage() {
   const router = useRouter();
-  const params = useSearchParams();
-  const email = params.get("email") ?? "";
-
   return (
-    <div >
+    <div>
       <div className="max-w-md w-full text-center">
-        <h1 className="text-[22px] font-semibold text-[#3FA9D9]">Mot de passe mis à jour !</h1>
+        <h1 className="text-[22px] font-semibold text-[#3FA9D9]">
+          Mot de passe mis à jour !
+        </h1>
         <p className="text-sm text-gray-700 mt-4">
-          Vous pouvez maintenant créer un nouveau mot de passe pour votre compte.
-          <br />Appuyez sur <strong>Confirmer</strong> pour continuer.
+          Vous pouvez maintenant créer un nouveau mot de passe pour votre
+          compte.
+          <br />
+          Appuyez sur <strong>Confirmer</strong> pour continuer.
         </p>
 
         <button

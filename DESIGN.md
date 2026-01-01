@@ -46,3 +46,74 @@ Attributs :
 
 Responsabilité :
 - Créer et gérer ses sujets (Subject)
+- 
+### Subject
+Représente un sujet créé par un utilisateur.
+
+Attributs :
+- id
+- title
+- extractText
+
+Relations :
+- Un Subject appartient à un User
+- Un Subject peut être lié à un Quiz, un Resume ou un Chat
+
+### Quiz
+Représente un questionnaire associé à un Subject.
+
+Attributs :
+- id
+- content
+
+Relations :
+- Un Quiz contient plusieurs Questions
+
+### Question
+Représente une question d’un quiz.
+
+Attributs :
+- id
+- content
+
+Relations :
+- Une Question possède plusieurs Responses
+
+### Response
+Représente une réponse possible à une question.
+
+Attributs :
+- id
+- content
+- isCorrect
+- isSelected
+
+### Resume
+Contient le résumé généré pour un Subject.
+
+Attributs :
+- id
+- textResume
+
+### Chat
+Représente une discussion associée à un Subject.
+
+### Message
+Représente un message envoyé dans un Chat.
+Un Chat est composé de plusieurs Messages.
+## 5. Modèle dynamique
+
+### Scénario nominal : création d’un quiz
+1. L’utilisateur crée un Subject
+2. Il choisit le type "Quiz"
+3. Le système génère un Quiz
+4. Le Quiz contient plusieurs Questions
+5. Chaque Question contient des Responses
+
+## 6. Choix techniques
+
+- Architecture orientée objet
+- UML pour la modélisation
+- Java pour l’implémentation (Back-end)
+- Next pour l'implémentation (Front-end)
+![Dictionnaire de données](docs/Dictionnaire-de-donnees.pdf)

@@ -16,15 +16,15 @@ const ChooseScreen = () => {
     const router = useRouter();
 
     const handleGenerateQuiz = () => {
-        // router.push('/(app)/quiz');
+        router.push('/(tabs)/quiz');
     };
 
     const handleChat = () => {
-        // router.push('/(app)/chat');
+        router.push('/(tabs)/chat');
     };
 
     const handleGenerateSummary = () => {
-        // router.push('/(app)/summary');
+        router.push('/(tabs)');
     };
 
     return (
@@ -80,13 +80,14 @@ const ChooseScreen = () => {
                         onPress={handleGenerateQuiz}
                         activeOpacity={0.8}
                     >
+
+                        <Text style={styles.actionButtonText}>Générer un quiz</Text>
                         <MaterialCommunityIcons
                             name="file-question-outline"
                             size={24}
                             color="#fff"
                             style={styles.buttonIcon}
                         />
-                        <Text style={styles.actionButtonText}>Générer un quiz</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -94,13 +95,14 @@ const ChooseScreen = () => {
                         onPress={handleChat}
                         activeOpacity={0.8}
                     >
+
+                        <Text style={styles.actionButtonText}>Chattez avec studyAI</Text>
                         <Ionicons
                             name="chatbubbles-outline"
                             size={24}
                             color="#fff"
                             style={styles.buttonIcon}
                         />
-                        <Text style={styles.actionButtonText}>Chattez avec studyAI</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -108,13 +110,14 @@ const ChooseScreen = () => {
                         onPress={handleGenerateSummary}
                         activeOpacity={0.8}
                     >
+
+                        <Text style={styles.actionButtonText}>Générer un résumé</Text>
                         <Ionicons
                             name="document-text-outline"
                             size={24}
                             color="#fff"
                             style={styles.buttonIcon}
                         />
-                        <Text style={styles.actionButtonText}>Générer un résumé</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -242,6 +245,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 8,
         elevation: 4,
+        gap: 5
     },
     buttonIcon: {
         marginRight: 10,

@@ -2,41 +2,76 @@
 
 export type ChatResponse = {
   message: string;
-  fullResponse?: string;   // Pour plus tard si ton API renvoie autre chose
 };
 
-/**
- * Envoie un message utilisateur au backend pour un subject donné.
- *
- * Même si l’API backend n’est pas encore prête, cette fonction renverra
- * automatiquement "Chat trouvé" en mode fallback.
- */
-export async function chatWithSubject(
+function getToken() {
+  return localStorage.getItem("auth_token") || "";
+}
+
+function isJsonResponse(res: Response) {
+  const ct = res.headers.get("content-type") || "";
+  return ct.includes("application/json");
+}
+
+export async function sendChatMessage(
+  userId: string,
   subjectId: string,
-  userMessage: string
+  message: string
 ): Promise<ChatResponse> {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+  if (!base) {
+    return { message: "API base URL manquante (NEXT_PUBLIC_API_BASE_URL)." };
+  }
+
+  const token = getToken();
+
+  console.log("userId : ", userId, "message : ", message, " subjectId : ", subjectId)
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/subject/${subjectId}/chat`,
+      `${base}/chat/message?userId=${encodeURIComponent(userId)}&subjectId=${encodeURIComponent(
+        subjectId
+      )}`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage }),
+        headers: {
+          "Content-Type": "text/plain",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: message,
       }
     );
 
+    // Erreurs: on essaie de récupérer {error: "..."} du backend
     if (!res.ok) {
-      console.warn("Chat API non disponible, fallback activé.");
-      return { message: "Chat trouvé (fallback)" };
+      let backendError = `Erreur IA (HTTP ${res.status}).`;
+
+      try {
+        if (isJsonResponse(res)) {
+          const data = (await res.json()) as { error?: string };
+          if (data?.error) backendError = data.error;
+        } else {
+          const txt = await res.text();
+          if (txt) backendError = txt;
+        }
+      } catch {
+        // ignore parse
+      }
+
+      return { message: backendError };
     }
 
-    const data = await res.json();
-    return {
-      message: data.message ?? "Réponse vide du serveur",
-      fullResponse: JSON.stringify(data),
-    };
-  } catch (error) {
-    console.warn("Erreur API chat:", error);
-    return { message: "Chat trouvé (fallback)" };
+    //Succès: backend renvoie { response: "..." }
+    if (isJsonResponse(res)) {
+      const data = (await res.json()) as { response?: string };
+      return { message: data?.response ?? "Réponse vide." };
+    }
+
+    // fallback si jamais le backend renvoie du texte
+    const text = await res.text();
+    return { message: text || "Réponse vide." };
+  } catch (e) {
+    console.error("sendChatMessage error:", e);
+    return { message: "Impossible de contacter le serveur." };
   }
 }

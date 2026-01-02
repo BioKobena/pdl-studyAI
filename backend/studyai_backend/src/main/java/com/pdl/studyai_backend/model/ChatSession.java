@@ -17,17 +17,16 @@ public class ChatSession {
     public ChatSession() {
     }
 
+    public ChatSession(String subjectId) {
+        this.subjectId = subjectId;
+        this.createdAt = Instant.now();
+    }
+
     public ChatSession(String id, String userId, String subjectId, Instant createdAt) {
         this.id = id;
         this.userId = userId;
         this.subjectId = subjectId;
         this.createdAt = createdAt == null ? Instant.now() : createdAt;
-    }
-
-    public ChatSession(String userId, String subjectId, Instant createdAt) {
-        this.userId = userId;
-        this.subjectId = subjectId;
-        this.createdAt = createdAt;
     }
 
     public String getId() {

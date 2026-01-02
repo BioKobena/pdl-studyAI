@@ -1,98 +1,219 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Image,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const ResumeScreen = () => {
+  const router = useRouter();
+  const [hasResume, setHasResume] = useState(false);
 
-export default function HomeScreen() {
+  const handleGenerateResume = () => {
+    setHasResume(true);
+  };
+
+  const handleStartChat = () => {
+    router.push('/(tabs)/chat');
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar style="dark" />
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title}>Résumé de votre cours</Text>
+
+        {!hasResume ? (
+          <View style={styles.pdfContainer}>
+            <View style={styles.pdfBox}>
+              <Image
+                source={require('@/assets/images/pdf.png')}
+                style={styles.pdfImage}
+                resizeMode="contain"
+              />
+            </View>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleGenerateResume}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.actionButtonText}>Générer mon résumé</Text>
+              <Ionicons name="sparkles" size={20} color="#fff" style={styles.buttonIcon} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.contentContainer}>
+            <View style={styles.summaryCard}>
+              <View style={styles.subjectHeader}>
+                <Text style={styles.subjectLabel}>Sujet :</Text>
+                <Text style={styles.subjectText}>Application des graphes</Text>
+              </View>
+
+              <ScrollView
+                style={styles.summaryContent}
+                nestedScrollEnabled={true}
+                showsVerticalScrollIndicator={true}
+              >
+                <Text style={styles.summaryText}>
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
+                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours.
+                </Text>
+              </ScrollView>
+            </View>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleStartChat}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.actionButtonText}>Commencer un chat</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 100,
+  },
+  title: {
+    fontSize: 24,
+    fontFamily: 'Kufam-Bold',
+    color: '#2C94CB',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  pdfContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  pdfBox: {
+    width: 280,
+    height: 360,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#2C94CB',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  pdfImage: {
+    width: 150,
+    height: 150,
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  summaryCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    padding: 20,
+    marginBottom: 30,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    maxHeight: 550,
+  },
+  subjectHeader: {
+    flexDirection: 'row',
+    marginBottom: 15,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  subjectLabel: {
+    fontSize: 16,
+    fontFamily: 'Kufam-Bold',
+    color: '#000',
+    marginRight: 8,
+  },
+  subjectText: {
+    fontSize: 16,
+    fontFamily: 'Kufam-Regular',
+    color: '#333',
+    flex: 1,
+  },
+  summaryContent: {
+    maxHeight: 450,
+  },
+  summaryText: {
+    fontSize: 14,
+    fontFamily: 'Kufam-Regular',
+    color: '#797575ff',
+    lineHeight: 22,
+  },
+  actionButton: {
+    backgroundColor: '#F9690E',
+    borderRadius: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    shadowColor: '#F9690E',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  buttonIcon: {
+    marginLeft: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  actionButtonText: {
+    fontSize: 18,
+    fontFamily: 'Kufam-Bold',
+    color: '#fff',
+    letterSpacing: 0.3,
   },
 });
+
+export default ResumeScreen;

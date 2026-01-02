@@ -6,18 +6,18 @@ public class ResumeRequest {
     @NotBlank
     private String subjectId;
 
-    @NotBlank
-    private String texteResume;
+    // @NotBlank
+    // private String texteResume;
 
     public String getSubjectId() {
         return subjectId;
     }
 
-    public String getTextResume() {
-        return texteResume;
-    }
+    // public String getTextResume() {
+    //     return texteResume;
+    // }
 
-    public void setTextResume(String textResume) {
-        this.texteResume = textResume;
-    }
+    // public void setTextResume(String textResume) {
+    //     this.texteResume = textResume;
+    // }
 }

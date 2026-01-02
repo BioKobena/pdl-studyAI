@@ -10,10 +10,13 @@ export default function UpdatedSuccessPage() {
           <span className="text-3xl text-[#3F89BD]">✓</span>
         </div>
 
-        <h1 className="text-[22px] font-semibold text-[#3FA9D9]">Mot de passe mis à jour !</h1>
+        <h1 className="text-[22px] font-semibold text-[#3FA9D9]">
+          Mot de passe mis à jour !
+        </h1>
         <p className="text-sm text-gray-700 mt-3">
           Bravo ! Votre mot de passe a bien été changé.
-          <br />Appuyez sur <strong>Se connecter</strong> pour accéder à votre compte.
+          <br />
+          Appuyez sur <strong>Se connecter</strong> pour accéder à votre compte.
         </p>
 
         <Link

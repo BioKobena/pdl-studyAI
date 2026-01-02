@@ -1,103 +1,256 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { FileText, Pencil, MessageCircle, ClipboardList } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { FileText } from "lucide-react";
 import OptionButton from "../../../component/ui/option-button";
+import { useSearchParams, useRouter } from "next/navigation";
+import { createSubject } from "@/lib/api/subject";
+import { withAuth } from "@/lib/api/withAuth.client";
 
-export default function UploadSuccess() {
-    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-    const [isDragging, setIsDragging] = useState(false);
+type PdfMeta = { chars: number; ms?: number; pages?: number };
 
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
+function UploadSuccess() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const key = params.get("key") || "";
+
+  const [sessName, setSessName] = useState<string>("");
+  const [sessText, setSessText] = useState<string>("");
+  const [meta, setMeta] = useState<PdfMeta | null>(null);
+
+  const [loadingAction, setLoadingAction] = useState(false);
+  const [creatingSubject, setCreatingSubject] = useState(false);
+  const [subjectId, setSubjectId] = useState<string>("");
+
+  // ✅ anti double call (dev/StrictMode)
+  const createOnceRef = useRef(false);
+
+  // -------------------------------------------------------
+  // 1) Charger le PDF depuis sessionStorage (TOUJOURS)
+  // -------------------------------------------------------
+  useEffect(() => {
+    if (!key) return;
+
+    const name = sessionStorage.getItem(`pdfName:${key}`) || "";
+    const blobUrl = sessionStorage.getItem(`pdfBlobUrl:${key}`) || "";
+    const text = sessionStorage.getItem(`pdfText:${key}`) || "";
+    const metaRaw = sessionStorage.getItem(`pdfMeta:${key}`);
+
+    setSessName(name);
+    setSessText(text);
+
+    if (metaRaw) {
+      try {
+        setMeta(JSON.parse(metaRaw) as PdfMeta);
+      } catch {
+        setMeta({ chars: text.length });
+      }
+    } else {
+      setMeta({ chars: text.length });
+    }
+
+    // subjectId déjà créé ?
+    const existingSubjectId = sessionStorage.getItem(`subjectId:${key}`) || "";
+    if (existingSubjectId) {
+      setSubjectId(existingSubjectId);
+
+      // ✅ mode "1 seul PDF actif"
+      sessionStorage.setItem("activeSubjectId", existingSubjectId);
+      sessionStorage.setItem("activePdfName", name || "Document"); // optionnel
+    }
+
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
+  }, [key]);
 
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-    };
+  const hasText = useMemo(() => sessText.trim().length > 0, [sessText]);
 
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
+  const getUserId = () => {
+    const fromLocal = localStorage.getItem("userid");
+    if (fromLocal) return fromLocal;
 
-        const files = e.dataTransfer.files;
-        if (files.length > 0 && files[0].type === 'application/pdf') {
-            setUploadedFile(files[0]);
-        }
-    };
+    try {
+      const currentUser = JSON.parse(localStorage.getItem("current_user") || "{}");
+      return currentUser?.id || null;
+    } catch {
+      return null;
+    }
+  };
 
-    const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (files && files.length > 0) {
-            setUploadedFile(files[0]);
-        }
-    };
+  // -------------------------------------------------------
+  // 2) Créer le subject (1 seule fois par key)
+  // -------------------------------------------------------
+  const ensureSubjectId = useCallback(async (): Promise<string> => {
+    if (!key) throw new Error("key manquant");
+    if (!sessText.trim()) throw new Error("Aucun texte extrait");
 
-    return (
-        <div className="min-h-screen bg-gray-50">
+    // déjà en mémoire ?
+    const cached = sessionStorage.getItem(`subjectId:${key}`);
+    if (cached) {
+      // ✅ garantir activeSubjectId même si déjà créé
+      sessionStorage.setItem("activeSubjectId", cached);
+      sessionStorage.setItem("activePdfName", sessName || "Document"); // optionnel
+      return cached;
+    }
 
-            {/* Main Content */}
-            <main className="max-w-2xl mx-auto px-6 py-5">
-                {/* Title Section */}
-                <div className="text-center mb-4">
-                    <p className="text-2xl text-[#3FA9D9]">Révise plus vite</p>
-                </div>
+    // si création déjà en cours -> attendre
+    if (creatingSubject) {
+      await new Promise((r) => setTimeout(r, 250));
+      const cachedAfter = sessionStorage.getItem(`subjectId:${key}`);
+      if (cachedAfter) {
+        sessionStorage.setItem("activeSubjectId", cachedAfter);
+        sessionStorage.setItem("activePdfName", sessName || "Document"); // optionnel
+        return cachedAfter;
+      }
+    }
 
-                {/* Upload Area */}
-                <div
-                    className={`mb-10 border-2 rounded-lg p-8 transition-colors ${isDragging ? 'border-[#3FA9D9] bg-blue-50' : ' bg-white'}`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                >
-                    <div className="flex flex-col items-center justify-center gap-2">
-                        {/* PDF Icon */}
-                        <div className="relative w-32 h-32">
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-24 h-28 bg-white border border-gray-300 rounded-lg shadow-md flex flex-col items-center justify-center overflow-hidden">
-                                    <div className="flex-1 flex items-center justify-center">
-                                        <FileText className="w-12 h-12 text-[#c94a4a]" />
-                                    </div>
-                                    <div className="bg-[#c94a4a] w-full py-2 text-white text-center">
-                                        PDF
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+    setCreatingSubject(true);
+    try {
+      const userId = getUserId();
+      const payload = {
+        userId,
+        title: sessName || "Document",
+        extractText: sessText,
+      };
 
-                        {/* File name or upload prompt */}
-                        {uploadedFile ? (
-                            <p className="text-[#8b0000]">{uploadedFile.name}</p>
-                        ) : (
-                            <>
-                                <p className="text-[#8b0000]">cours_base_de_donnees.pdf</p>
-                                <input
-                                    type="file"
-                                    accept="application/pdf"
-                                    onChange={handleFileInput}
-                                    className="hidden"
-                                    id="file-upload"
-                                />
-                            </>
-                        )}
-                    </div>
-                </div>
+      const res = await createSubject(payload);
 
-                {/* Options Section */}
-                <div className="flex flex-col items-center justify-center min-h-screenspace-y-6">
-                    <h2 className="text-2xl text-gray-700">
-                        Commençons votre révision, choisissez une option :
-                    </h2>
+      const id =
+        (res as any)?.subjectId ??
+        (res as any)?.id ??
+        (res as any)?.subject?.id;
 
-                    <div className="flex flex-wrap gap-6 justify-center mt-8">
-                        <OptionButton icon="/resume.png" label="Résumé" />
-                        <OptionButton icon="/chat.png" label="Chat" />
-                        <OptionButton icon="/quizz.png" label="Quizz" />
-                    </div>
-                </div>
-            </main>
+      if (!id) {
+        console.error("createSubject response:", res);
+        throw new Error("Le backend n’a pas renvoyé de subjectId");
+      }
+
+      const idStr = String(id);
+
+      // stock key-specific (utile pour debug / retour)
+      sessionStorage.setItem(`subjectId:${key}`, idStr);
+      setSubjectId(idStr);
+
+      // mode "1 seul PDF actif"
+      sessionStorage.setItem("activeSubjectId", idStr);
+      sessionStorage.setItem("activePdfName", sessName || "Document"); // optionnel
+
+      return idStr;
+    } finally {
+      setCreatingSubject(false);
+    }
+  }, [key, sessName, sessText, creatingSubject]);
+
+  // -------------------------------------------------------
+  // 3) Auto-create dès que le texte est prêt (sans bloquer le chargement)
+  // -------------------------------------------------------
+  useEffect(() => {
+    if (!key) return;
+    if (!sessText.trim()) return;
+    if (subjectId) return;
+
+    if (createOnceRef.current) return;
+    createOnceRef.current = true;
+
+    ensureSubjectId().catch((e) => {
+      console.error("ensureSubjectId auto:", e);
+      createOnceRef.current = false; // permet retry
+    });
+  }, [key, sessText, subjectId, ensureSubjectId]);
+
+  // -------------------------------------------------------
+  // 4) Redirection : garantit subjectId puis go sans params
+  // -------------------------------------------------------
+  const startLoadingAndRedirect = async (target: "resume" | "chatter" | "quiz") => {
+    setLoadingAction(true);
+    try {
+      await ensureSubjectId();
+
+      // ✅ plus besoin de passer subjectId/key dans l’URL
+      router.push(`/dashboard/${target}`);
+    } catch (e) {
+      console.error(e);
+      setLoadingAction(false);
+      alert("Impossible de créer le sujet (subjectId). Vérifie la console.");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 relative">
+      {(loadingAction || creatingSubject) && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3">
+            <span className="h-10 w-10 animate-spin rounded-full border-4 border-[#3FA9D9] border-t-transparent" />
+            <p className="text-[#3FA9D9] font-medium">
+              {creatingSubject ? "Création du sujet…" : "Chargement…"}
+            </p>
+          </div>
         </div>
-    );
+      )}
+
+      <main className="max-w-2xl mx-auto px-6 py-5">
+        <div className="text-center mb-4">
+          <p className="text-2xl text-[#3FA9D9]">Révise plus vite</p>
+        </div>
+
+        <div className="mb-10 border-2 rounded-lg p-8 bg-white">
+          <div className="flex flex-col items-center justify-center gap-2">
+            <div className="relative w-32 h-32">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-24 h-28 bg-white border border-gray-300 rounded-lg shadow-md flex flex-col items-center justify-center overflow-hidden">
+                  <div className="flex-1 flex items-center justify-center">
+                    <FileText className="w-12 h-12 text-[#c94a4a]" />
+                  </div>
+                  <div className="bg-[#c94a4a] w-full py-2 text-white text-center">
+                    PDF
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {sessName && (
+              <p className="text-[#8b0000] mt-2">
+                Fichier : <b>{sessName}</b>
+              </p>
+            )}
+          </div>
+        </div>
+
+        {hasText ? (
+          <div className="mb-6 inline-flex flex-wrap items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
+            <span>✓PDF analysé</span>
+            <span>• {(meta?.chars ?? sessText.length).toLocaleString()} caractères</span>
+            {subjectId ? <span>• subjectId: {subjectId}</span> : null}
+          </div>
+        ) : (
+          <div className="mb-6 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+            Aucun texte extrait — ce PDF semble être un scan.
+          </div>
+        )}
+
+        <div className="flex flex-col items-center justify-center space-y-6">
+          <h2 className="text-2xl text-gray-700">
+            Commençons votre révision, choisissez une option :
+          </h2>
+
+          <div className="mt-6 flex flex-wrap gap-3 justify-center">
+            <div onClick={() => startLoadingAndRedirect("resume")}>
+              <OptionButton icon="/resume.png" label="Resume" />
+            </div>
+
+            <div onClick={() => startLoadingAndRedirect("chatter")}>
+              <OptionButton icon="/chat.png" label="Chat" />
+            </div>
+
+            <div onClick={() => startLoadingAndRedirect("quiz")}>
+              <OptionButton icon="/quizz.png" label="Quizz" />
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }
+
+export default withAuth(UploadSuccess);

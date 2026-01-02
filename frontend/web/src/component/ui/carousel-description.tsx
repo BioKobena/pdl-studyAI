@@ -1,351 +1,346 @@
-'use client';
-import {
-    Children,
-    ReactNode,
-    createContext,
-    useContext,
+"use client";
+import React, {
     useEffect,
     useRef,
     useState,
-} from 'react';
-import { motion, Transition, useMotionValue } from 'motion/react';
-import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+    useMemo,
+    useCallback,
+} from "react";
+import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
 
-export type CarouselContextType = {
-    index: number;
-    setIndex: (newIndex: number) => void;
-    itemsCount: number;
-    setItemsCount: (newItemsCount: number) => void;
-    disableDrag: boolean;
-};
-
-const CarouselContext = createContext<CarouselContextType | undefined>(
-    undefined
-);
-
-function useCarousel() {
-    const context = useContext(CarouselContext);
-    if (!context) {
-        throw new Error('useCarousel must be used within an CarouselProvider');
-    }
-    return context;
+interface Testimonial {
+    quote: string;
+    name: string;
+    designation: string;
+    src: string;
+}
+interface Colors {
+    name?: string;
+    designation?: string;
+    testimony?: string;
+    arrowBackground?: string;
+    arrowForeground?: string;
+    arrowHoverBackground?: string;
+}
+interface FontSizes {
+    name?: string;
+    designation?: string;
+    quote?: string;
+}
+interface CircularTestimonialsProps {
+    testimonials: Testimonial[];
+    autoplay?: boolean;
+    colors?: Colors;
+    fontSizes?: FontSizes;
 }
 
-export type CarouselProviderProps = {
-    children: ReactNode;
-    initialIndex?: number;
-    onIndexChange?: (newIndex: number) => void;
-    disableDrag?: boolean;
-};
+function calculateGap(width: number) {
+    const minWidth = 1024;
+    const maxWidth = 1456;
+    const minGap = 60;
+    const maxGap = 86;
+    if (width <= minWidth) return minGap;
+    if (width >= maxWidth)
+        return Math.max(minGap, maxGap + 0.06018 * (width - maxWidth));
+    return minGap + (maxGap - minGap) * ((width - minWidth) / (maxWidth - minWidth));
+}
 
-function CarouselProvider({
-                              children,
-                              initialIndex = 0,
-                              onIndexChange,
-                              disableDrag = false,
-                          }: CarouselProviderProps) {
-    const [index, setIndex] = useState<number>(initialIndex);
-    const [itemsCount, setItemsCount] = useState<number>(0);
+export const CarouselDescription = ({
+                                        testimonials,
+                                        autoplay = true,
+                                        colors = {},
+                                        fontSizes = {},
+                                    }: CircularTestimonialsProps) => {
+    // Color & font config
+    const colorName = colors.name ?? "#000";
+    const colorDesignation = colors.designation ?? "#6b7280";
+    const colorTestimony = colors.testimony ?? "#4b5563";
+    const colorArrowBg = colors.arrowBackground ?? "#141414";
+    const colorArrowFg = colors.arrowForeground ?? "#f1f1f7";
+    const colorArrowHoverBg = colors.arrowHoverBackground ?? "#00a6fb";
+    const fontSizeName = fontSizes.name ?? "1.5rem";
+    const fontSizeDesignation = fontSizes.designation ?? "0.925rem";
+    const fontSizeQuote = fontSizes.quote ?? "1.125rem";
 
-    const handleSetIndex = (newIndex: number) => {
-        setIndex(newIndex);
-        onIndexChange?.(newIndex);
-    };
+    // State
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [hoverPrev, setHoverPrev] = useState(false);
+    const [hoverNext, setHoverNext] = useState(false);
+    const [containerWidth, setContainerWidth] = useState(1200);
 
+    const imageContainerRef = useRef<HTMLDivElement>(null);
+    const autoplayIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const testimonialsLength = useMemo(() => testimonials.length, [testimonials]);
+    const activeTestimonial = useMemo(
+        () => testimonials[activeIndex],
+        [activeIndex, testimonials]
+    );
+
+    // Responsive gap calculation
     useEffect(() => {
-        setIndex(initialIndex);
-    }, [initialIndex]);
-
-    return (
-        <CarouselContext.Provider
-            value={{
-                index,
-                setIndex: handleSetIndex,
-                itemsCount,
-                setItemsCount,
-                disableDrag,
-            }}
-        >
-            {children}
-        </CarouselContext.Provider>
-    );
-}
-
-export type CarouselProps = {
-    children: ReactNode;
-    className?: string;
-    initialIndex?: number;
-    index?: number;
-    onIndexChange?: (newIndex: number) => void;
-    disableDrag?: boolean;
-};
-
-function Carousel({
-                      children,
-                      className,
-                      initialIndex = 0,
-                      index: externalIndex,
-                      onIndexChange,
-                      disableDrag = false,
-                  }: CarouselProps) {
-    const [internalIndex, setInternalIndex] = useState<number>(initialIndex);
-    const isControlled = externalIndex !== undefined;
-    const currentIndex = isControlled ? externalIndex : internalIndex;
-
-    const handleIndexChange = (newIndex: number) => {
-        if (!isControlled) {
-            setInternalIndex(newIndex);
+        function handleResize() {
+            if (imageContainerRef.current) {
+                setContainerWidth(imageContainerRef.current.offsetWidth);
+            }
         }
-        onIndexChange?.(newIndex);
-    };
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
-    return (
-        <CarouselProvider
-            initialIndex={currentIndex}
-            onIndexChange={handleIndexChange}
-            disableDrag={disableDrag}
-        >
-            <div className={cn('group/hover relative', className)}>
-                <div className='overflow-hidden'>{children}</div>
-            </div>
-        </CarouselProvider>
-    );
-}
-
-export type CarouselNavigationProps = {
-    className?: string;
-    classNameButton?: string;
-    alwaysShow?: boolean;
-};
-
-function CarouselNavigation({
-                                className,
-                                classNameButton,
-                                alwaysShow,
-                            }: CarouselNavigationProps) {
-    const { index, setIndex, itemsCount } = useCarousel();
-
-    return (
-        <div
-            className={cn(
-                'pointer-events-none absolute left-[-12.5%] top-1/2 flex w-[125%] -translate-y-1/2 justify-between px-2',
-                className
-            )}
-        >
-            <button
-                type='button'
-                aria-label='Previous slide'
-                className={cn(
-                    'pointer-events-auto h-fit w-fit rounded-full bg-zinc-50 p-2 transition-opacity duration-300 dark:bg-zinc-950',
-                    alwaysShow
-                        ? 'opacity-100'
-                        : 'opacity-0 group-hover/hover:opacity-100',
-                    alwaysShow
-                        ? 'disabled:opacity-40'
-                        : 'group-hover/hover:disabled:opacity-40',
-                    classNameButton
-                )}
-                disabled={index === 0}
-                onClick={() => {
-                    if (index > 0) {
-                        setIndex(index - 1);
-                    }
-                }}
-            >
-                <ChevronLeft
-                    className='stroke-zinc-600 dark:stroke-zinc-50'
-                    size={16}
-                />
-            </button>
-            <button
-                type='button'
-                className={cn(
-                    'pointer-events-auto h-fit w-fit rounded-full bg-zinc-50 p-2 transition-opacity duration-300 dark:bg-zinc-950',
-                    alwaysShow
-                        ? 'opacity-100'
-                        : 'opacity-0 group-hover/hover:opacity-100',
-                    alwaysShow
-                        ? 'disabled:opacity-40'
-                        : 'group-hover/hover:disabled:opacity-40',
-                    classNameButton
-                )}
-                aria-label='Next slide'
-                disabled={index + 1 === itemsCount}
-                onClick={() => {
-                    if (index < itemsCount - 1) {
-                        setIndex(index + 1);
-                    }
-                }}
-            >
-                <ChevronRight
-                    className='stroke-zinc-600 dark:stroke-zinc-50'
-                    size={16}
-                />
-            </button>
-        </div>
-    );
-}
-
-export type CarouselIndicatorProps = {
-    className?: string;
-    classNameButton?: string;
-};
-
-function CarouselIndicator({
-                               className,
-                               classNameButton,
-                           }: CarouselIndicatorProps) {
-    const { index, itemsCount, setIndex } = useCarousel();
-
-    return (
-        <div
-            className={cn(
-                'absolute bottom-0 z-10 flex w-full items-center justify-center',
-                className
-            )}
-        >
-            <div className='flex space-x-2'>
-                {Array.from({ length: itemsCount }, (_, i) => (
-                    <button
-                        key={i}
-                        type='button'
-                        aria-label={`Go to slide ${i + 1}`}
-                        onClick={() => setIndex(i)}
-                        className={cn(
-                            'h-2 w-2 rounded-full transition-opacity duration-300',
-                            index === i
-                                ? 'bg-zinc-950 dark:bg-zinc-50'
-                                : 'bg-zinc-900/50 dark:bg-zinc-100/50',
-                            classNameButton
-                        )}
-                    />
-                ))}
-            </div>
-        </div>
-    );
-}
-
-export type CarouselContentProps = {
-    children: ReactNode;
-    className?: string;
-    transition?: Transition;
-};
-
-function CarouselContent({
-                             children,
-                             className,
-                             transition,
-                         }: CarouselContentProps) {
-    const { index, setIndex, setItemsCount, disableDrag } = useCarousel();
-    const [visibleItemsCount, setVisibleItemsCount] = useState(1);
-    const dragX = useMotionValue(0);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const itemsLength = Children.count(children);
-
+    // Autoplay
     useEffect(() => {
-        if (!containerRef.current) {
-            return;
+        if (autoplay) {
+            autoplayIntervalRef.current = setInterval(() => {
+                setActiveIndex((prev) => (prev + 1) % testimonialsLength);
+            }, 5000);
         }
-
-        const options = {
-            root: containerRef.current,
-            threshold: 0.5,
+        return () => {
+            if (autoplayIntervalRef.current) clearInterval(autoplayIntervalRef.current);
         };
+    }, [autoplay, testimonialsLength]);
 
-        const observer = new IntersectionObserver((entries) => {
-            const visibleCount = entries.filter(
-                (entry) => entry.isIntersecting
-            ).length;
-            setVisibleItemsCount(visibleCount);
-        }, options);
-
-        const childNodes = containerRef.current.children;
-        Array.from(childNodes).forEach((child) => observer.observe(child));
-
-        return () => observer.disconnect();
-    }, [children, setItemsCount]);
-
+    // Keyboard navigation
     useEffect(() => {
-        if (!itemsLength) {
-            return;
+        const handleKey = (e: KeyboardEvent) => {
+            if (e.key === "ArrowLeft") handlePrev();
+            if (e.key === "ArrowRight") handleNext();
+        };
+        window.addEventListener("keydown", handleKey);
+        return () => window.removeEventListener("keydown", handleKey);
+        // eslint-disable-next-line
+    }, [activeIndex, testimonialsLength]);
+
+    // Navigation handlers
+    const handleNext = useCallback(() => {
+        setActiveIndex((prev) => (prev + 1) % testimonialsLength);
+        if (autoplayIntervalRef.current) clearInterval(autoplayIntervalRef.current);
+    }, [testimonialsLength]);
+    const handlePrev = useCallback(() => {
+        setActiveIndex((prev) => (prev - 1 + testimonialsLength) % testimonialsLength);
+        if (autoplayIntervalRef.current) clearInterval(autoplayIntervalRef.current);
+    }, [testimonialsLength]);
+
+    // Compute transforms for each image (always show 3: left, center, right)
+    function getImageStyle(index: number): React.CSSProperties {
+        const gap = calculateGap(containerWidth);
+        const maxStickUp = gap * 0.8;
+        const offset = (index - activeIndex + testimonialsLength) % testimonialsLength;
+        // const zIndex = testimonialsLength - Math.abs(offset);
+        const isActive = index === activeIndex;
+        const isLeft = (activeIndex - 1 + testimonialsLength) % testimonialsLength === index;
+        const isRight = (activeIndex + 1) % testimonialsLength === index;
+        if (isActive) {
+            return {
+                zIndex: 3,
+                opacity: 1,
+                pointerEvents: "auto",
+                transform: `translateX(0px) translateY(0px) scale(1) rotateY(0deg)`,
+                transition: "all 0.8s cubic-bezier(.4,2,.3,1)",
+            };
         }
-
-        setItemsCount(itemsLength);
-    }, [itemsLength, setItemsCount]);
-
-    const onDragEnd = () => {
-        const x = dragX.get();
-
-        if (x <= -10 && index < itemsLength - 1) {
-            setIndex(index + 1);
-        } else if (x >= 10 && index > 0) {
-            setIndex(index - 1);
+        if (isLeft) {
+            return {
+                zIndex: 2,
+                opacity: 1,
+                pointerEvents: "auto",
+                transform: `translateX(-${gap}px) translateY(-${maxStickUp}px) scale(0.85) rotateY(15deg)`,
+                transition: "all 0.8s cubic-bezier(.4,2,.3,1)",
+            };
         }
+        if (isRight) {
+            return {
+                zIndex: 2,
+                opacity: 1,
+                pointerEvents: "auto",
+                transform: `translateX(${gap}px) translateY(-${maxStickUp}px) scale(0.85) rotateY(-15deg)`,
+                transition: "all 0.8s cubic-bezier(.4,2,.3,1)",
+            };
+        }
+        // Hide all other images
+        return {
+            zIndex: 1,
+            opacity: 0,
+            pointerEvents: "none",
+            transition: "all 0.8s cubic-bezier(.4,2,.3,1)",
+        };
+    }
+
+    // Framer Motion variants for quote
+    const quoteVariants = {
+        initial: { opacity: 0, y: 20 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -20 },
     };
 
     return (
-        <motion.div
-            drag={disableDrag ? false : 'x'}
-            dragConstraints={
-                disableDrag
-                    ? undefined
-                    : {
-                        left: 0,
-                        right: 0,
-                    }
-            }
-            dragMomentum={disableDrag ? undefined : false}
-            style={{
-                x: disableDrag ? undefined : dragX,
-            }}
-            animate={{
-                translateX: `-${index * (100 / visibleItemsCount)}%`,
-            }}
-            onDragEnd={disableDrag ? undefined : onDragEnd}
-            transition={
-                transition || {
-                    damping: 18,
-                    stiffness: 90,
-                    type: 'spring',
-                    duration: 0.2,
-                }
-            }
-            className={cn(
-                'flex items-center',
-                !disableDrag && 'cursor-grab active:cursor-grabbing',
-                className
-            )}
-            ref={containerRef}
-        >
-            {children}
-        </motion.div>
+        <div className="testimonial-container">
+            <div className="testimonial-grid">
+                {/* Images */}
+                <div className="image-container" ref={imageContainerRef}>
+                    {testimonials.map((testimonial, index) => (
+                        <img
+                            key={testimonial.src}
+                            src={testimonial.src}
+                            alt={testimonial.name}
+                            className="testimonial-image"
+                            data-index={index}
+                            style={getImageStyle(index)}
+                        />
+                    ))}
+                </div>
+                {/* Content */}
+                <div className="testimonial-content">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeIndex}
+                            variants={quoteVariants}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                        >
+                            <h3
+                                className="name"
+                                style={{ color: colorName, fontSize: fontSizeName }}
+                            >
+                                {activeTestimonial.name}
+                            </h3>
+                            <p
+                                className="designation"
+                                style={{ color: colorDesignation, fontSize: fontSizeDesignation }}
+                            >
+                                {activeTestimonial.designation}
+                            </p>
+                            <motion.p
+                                className="quote"
+                                style={{ color: colorTestimony, fontSize: fontSizeQuote }}
+                            >
+                                {activeTestimonial.quote.split(" ").map((word, i) => (
+                                    <motion.span
+                                        key={i}
+                                        initial={{
+                                            filter: "blur(10px)",
+                                            opacity: 0,
+                                            y: 5,
+                                        }}
+                                        animate={{
+                                            filter: "blur(0px)",
+                                            opacity: 1,
+                                            y: 0,
+                                        }}
+                                        transition={{
+                                            duration: 0.22,
+                                            ease: "easeInOut",
+                                            delay: 0.025 * i,
+                                        }}
+                                        style={{ display: "inline-block" }}
+                                    >
+                                        {word}&nbsp;
+                                    </motion.span>
+                                ))}
+                            </motion.p>
+                        </motion.div>
+                    </AnimatePresence>
+                    <div className="arrow-buttons">
+                        <button
+                            className="arrow-button prev-button"
+                            onClick={handlePrev}
+                            style={{
+                                backgroundColor: hoverPrev ? colorArrowHoverBg : colorArrowBg,
+                            }}
+                            onMouseEnter={() => setHoverPrev(true)}
+                            onMouseLeave={() => setHoverPrev(false)}
+                            aria-label="Previous testimonial"
+                        >
+                            <FaArrowLeft size={28} color={colorArrowFg} />
+                        </button>
+                        <button
+                            className="arrow-button next-button"
+                            onClick={handleNext}
+                            style={{
+                                backgroundColor: hoverNext ? colorArrowHoverBg : colorArrowBg,
+                            }}
+                            onMouseEnter={() => setHoverNext(true)}
+                            onMouseLeave={() => setHoverNext(false)}
+                            aria-label="Next testimonial"
+                        >
+                            <FaArrowRight size={28} color={colorArrowFg} />
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <style jsx>{`
+        .testimonial-container {
+          width: 100%;
+          max-width: 56rem;
+          padding: 2rem;
+        }
+        .testimonial-grid {
+          display: grid;
+          gap: 5rem;
+        }
+        .image-container {
+          position: relative;
+          width: 100%;
+          height: 24rem;
+          perspective: 1000px;
+        }
+        .testimonial-image {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 1.5rem;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        .testimonial-content {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+        .name {
+          font-weight: bold;
+          margin-bottom: 0.25rem;
+        }
+        .designation {
+          margin-bottom: 2rem;
+        }
+        .quote {
+          line-height: 1.75;
+        }
+        .arrow-buttons {
+          display: flex;
+          gap: 1.5rem;
+          padding-top: 3rem;
+        }
+        .arrow-button {
+          width: 2.7rem;
+          height: 2.7rem;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background-color 0.3s;
+          border: none;
+        }
+        .word {
+          display: inline-block;
+        }
+        @media (min-width: 768px) {
+          .testimonial-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+          .arrow-buttons {
+            padding-top: 0;
+          }
+        }
+      `}</style>
+        </div>
     );
-}
-
-export type CarouselItemProps = {
-    children: ReactNode;
-    className?: string;
 };
 
-function CarouselItem({ children, className }: CarouselItemProps) {
-    return (
-        <motion.div
-            className={cn(
-                'w-full min-w-0 shrink-0 grow-0 overflow-hidden',
-                className
-            )}
-        >
-            {children}
-        </motion.div>
-    );
-}
-
-export {
-    Carousel,
-    CarouselContent,
-    CarouselNavigation,
-    CarouselIndicator,
-    CarouselItem,
-    useCarousel,
-};
+export default CarouselDescription;

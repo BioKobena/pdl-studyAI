@@ -6,14 +6,15 @@ import {
     TouchableOpacity,
     StyleSheet,
     ScrollView,
+    Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '@/components/header/header';
 import { useRouter } from 'expo-router';
-
-
+import { signup } from '@/api/auth';
+import axios from 'axios';
 const RegisterScreen = () => {
     const [nom, setNom] = useState('');
     const [prenoms, setPrenoms] = useState('');
@@ -22,7 +23,39 @@ const RegisterScreen = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
 
     const router = useRouter()
-    const handleLogin = () => {
+    const handleRegister = async() => {
+        if(!nom || !prenoms || !email || !password || !confirmPassword){
+            Alert.alert("Champs manquants", "Veuillez remplir tous les champs.");
+            return;
+        }
+        const emailClean = email.trim().toLowerCase();
+        const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailClean);
+        if (!emailOk) {
+            Alert.alert("Email invalide", "Veuillez entrer un email valide.");
+            return;
+        }
+          if (password.length < 8) {
+            Alert.alert("Mot de passe trop court", "Minimum 8 caractères.");
+            return;
+        }
+        if (password!==confirmPassword){
+            Alert.alert("Mot de passe","Les mots de passe ne correspondent pas.");
+            return;
+        }
+        const fullName=`${prenoms.trim()} ${nom.trim()}`.trim();
+        try {
+            const res = await signup(fullName, emailClean, password);
+            Alert.alert("Compte créé", res?.message ?? "Inscription réussie ✅");
+            router.replace("/(auth)/login");
+        } catch (e: unknown) {
+            const msg =
+            axios.isAxiosError(e)
+                ? (e.response?.data as any)?.error ?? e.message
+                : "Erreur réseau/serveur";
+            Alert.alert("Inscription impossible", msg);
+        }
+    }
+    const handleLogin=()=>{
         router.push("/(auth)/login")
     }
     return (
@@ -106,6 +139,7 @@ const RegisterScreen = () => {
                     <TouchableOpacity
                         style={styles.registerButton}
                         activeOpacity={0.8}
+                        onPress={handleRegister}
                     >
                         <Text style={styles.registerButtonText}>Inscription</Text>
                     </TouchableOpacity>

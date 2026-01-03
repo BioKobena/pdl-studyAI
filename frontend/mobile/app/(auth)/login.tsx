@@ -14,6 +14,11 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import Header from '@/components/header/header';
+import {login} from '@/api/auth'
+import {Alert} from "react-native";
+import toast from "react-native-toast-message";
+import axios from 'axios';
+
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -21,8 +26,23 @@ const LoginScreen = () => {
 
   const router = useRouter();
 
-  const handleLogin = () => {
-    router.push("/(auth)/login")
+  const handleLogin = async() => {
+    if (!email || !password) return;
+      try{
+        await login(email,password)
+              toast.show(
+               { type:"success",text1:"Connexion réussie"});
+               setTimeout(() => router.replace("/home"), 400);
+      }catch (e: unknown) {
+    const msg =
+     axios.isAxiosError(e)
+      ? (e.response?.data as any)?.error ?? e.message
+      : "Erreur réseau/serveur";
+
+     Alert.alert("Connexion impossible", msg);
+
+    }
+
   }
 
   const handleRegister = () => {
@@ -79,7 +99,7 @@ const LoginScreen = () => {
         <TouchableOpacity
           style={styles.loginButton}
           activeOpacity={0.8}
-          onPress={handleHome}
+          onPress={handleLogin}
         >
           <Text style={styles.loginButtonText}>Connexion</Text>
         </TouchableOpacity>

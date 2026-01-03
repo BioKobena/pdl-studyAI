@@ -10,29 +10,62 @@ import {
     CardTableTitle,
 } from "@/component/ui/card-table";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/component/ui/table";
-import {ClipboardList, FileText, MessageSquare} from "lucide-react";
+import { ClipboardList, FileText, MessageSquare } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getUserSubjectsById, UserSubject } from "@/lib/api/userSubjectById";
+import { getChatsBySubject, getQuizzesBySubject, getSummariesBySubject } from "@/lib/api/subjectActions";
+import { getUser } from "@/lib/session";
 
-
-const filesData = [
-    { id: 1, name: "johndoe", hasSummary: true,  hasQuiz: true,  hasChat: true },
-    { id: 2, name: "janesmith", hasSummary: true,  hasQuiz: false, hasChat: true },
-    { id: 3, name: "bobwilson", hasSummary: false, hasQuiz: true,  hasChat: false },
-    { id: 4, name: "sarahjones", hasSummary: true,  hasQuiz: true,  hasChat: false },
-    { id: 5, name: "mikeanderson", hasSummary: false, hasQuiz: false, hasChat: true },
-];
-
+interface SubjectWithActions extends UserSubject {
+    summaries: any[];
+    quizzes: any[];
+    chats: any[];
+}
 
 function WithVisibility() {
+    const [subjects, setSubjects] = useState<SubjectWithActions[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadSubjects() {
+            const user = getUser();
+            if (!user?.id) return;
+
+            try {
+                const subjectsList = await getUserSubjectsById(user.id);
+
+                const enrichedSubjects = await Promise.all(
+                    subjectsList.map(async (subject) => {
+                        const [summaries, quizzes, chats] = await Promise.all([
+                            getSummariesBySubject(subject.id),
+                            getQuizzesBySubject(subject.id),
+                            getChatsBySubject(user.id, subject.id),
+                        ]);
+                        return { ...subject, summaries, quizzes, chats };
+                    })
+                );
+
+                setSubjects(enrichedSubjects);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        loadSubjects();
+    }, []);
+
+    if (loading) return <p>Chargement des documents...</p>;
 
     return (
         <CardTable className="mx-auto my-6 w-full max-w-6xl">
-            <CardTableHeader className="flex flex-row justify-between">
+            <CardTableHeader>
                 <div className="space-y-2">
                     <CardTableTitle>Liste des documents téléchargés</CardTableTitle>
                     <CardTableDescription>
                         Visualisez et gérez vos documents, consultez le résumé, le quiz ou poursuivez la conversation avec l’IA.
                     </CardTableDescription>
-
                 </div>
             </CardTableHeader>
 
@@ -42,32 +75,33 @@ function WithVisibility() {
                         <TableRow>
                             <TableHead>ID</TableHead>
                             <TableHead>Nom du fichier</TableHead>
-                            <TableHead>Action</TableHead>
+                            <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
                     <TableBody>
-                        {filesData.map((file, index) => (
-                            <TableRow key={index}>
-                                <TableCell>{file.id}</TableCell>
-                                <TableCell>
-                                    <a href="#" className="font-medium">{file.name}</a>
-                                </TableCell>
+                        {subjects.map((subject, index) => (
+                            <TableRow key={subject.id}>
+                                <TableCell>{index + 1}</TableCell>
+                                <TableCell>{subject.title}</TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        {file.hasSummary && (
-                                            <Button variant="outline" size="icon" title="Voir résumé">
-                                                <FileText className="size-3.5" />
+                                        {subject.summaries.length > 0 && (
+                                            <Button>
+                                                <FileText className="mr-2 w-4 h-4" />
+                                                Voir résumé
                                             </Button>
                                         )}
-                                        {file.hasQuiz && (
-                                            <Button variant="outline" size="icon" title="Voir quiz">
-                                                <ClipboardList className="size-3.5" />
+                                        {subject.quizzes.length > 0 && (
+                                            <Button>
+                                                <ClipboardList className="mr-2 w-4 h-4" />
+                                                Voir quiz
                                             </Button>
                                         )}
-                                        {file.hasChat && (
-                                            <Button variant="outline" size="icon" title="Poursuivre la conversation">
-                                                <MessageSquare className="size-3.5" />
+                                        {subject.chats.length > 0 && (
+                                            <Button>
+                                                <MessageSquare className="mr-2 w-4 h-4" />
+                                                Poursuivre conv.
                                             </Button>
                                         )}
                                     </div>
@@ -76,7 +110,6 @@ function WithVisibility() {
                         ))}
                     </TableBody>
                 </Table>
-
             </CardTableContent>
         </CardTable>
     );

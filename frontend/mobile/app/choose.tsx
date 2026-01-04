@@ -33,7 +33,7 @@ const ChooseScreen = () => {
     };
 
     const handleGenerateSummary = () => {
-        router.push({pathname:"/(tabs)",params:{subjectId}});
+        router.push({pathname:"/(tabs)",params:{subjectId,fileName}});
     };
 
     return (

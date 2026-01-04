@@ -16,24 +16,22 @@ import { resumeText } from '@/api/resume';
 
 const ResumeScreen = () => {
   const router = useRouter();
-  const {subjectId,fileName} =useLocalSearchParams<{subjectId: string,fileName:string}>();
+  const {subjectId,fileName} =useLocalSearchParams<{subjectId: string, fileName:string}>();
   const [loading,setLoading]= useState(false);
   const [resume, setResume] = useState<{texteResume?:string} | null>(null);
-const sid = Array.isArray(subjectId) ? subjectId[0] : subjectId;
+
   const handleGenerateResume = async () =>{
-    if(!sid){
+    if(!subjectId){
       Alert.alert("Erreur","SubjectId Manquant");
       return;
     }
     try{
       setLoading(true);
-      const data = await resumeText(sid);
+      const data = await resumeText(subjectId);
       console.log("RESUME RAW =", JSON.stringify(data, null, 2));
       const resumeObj = data?.resume ?? data;
       console.log("RESUME OBJ =", JSON.stringify(resumeObj, null, 2));
-       console.log("RESUME RAW =", data);        // debug
-      console.log("RESUME TXT =", data.resume?.texteResume);
-      setResume({texteResume: resumeObj.texteResume ?? resumeObj.content ?? ""});
+      setResume({texteResume: resumeObj.texteResume ?? resumeObj.content ??""});
     }catch(e:any){
       Alert.alert("Erreur",e?.message ?? "Erreur résumé");
 
@@ -93,7 +91,7 @@ const sid = Array.isArray(subjectId) ? subjectId[0] : subjectId;
                 showsVerticalScrollIndicator={true}
               >
                 <Text style={styles.summaryText}>
-                  {resume?.texteResume?? "Resumé introuvable "}
+                  {resume?.texteResume?? "Résumé intoruvable " }
                 </Text>
               </ScrollView>
             </View>

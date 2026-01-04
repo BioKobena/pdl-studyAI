@@ -17,7 +17,10 @@ export async function sendChatMessageMobile(params: {
   const token = await storage.getAccessToken();
 
   try {
+
+    
     const { data } = await api.post<BackendChatOk>(
+        
       "/chat/message",
       params.message, //body = texte brut
       {
@@ -28,7 +31,7 @@ export async function sendChatMessageMobile(params: {
         },
       }
     );
-
+    console.log("CHAT RAW =", params);
     return { message: data?.response ?? data?.message ?? "Réponse vide." };
   } catch (e: any) {
     const backend: BackendChatErr | undefined = e?.response?.data;
@@ -37,7 +40,11 @@ export async function sendChatMessageMobile(params: {
       backend?.message ??
       e?.message ??
       "Impossible de contacter le serveur.";
+        console.log("CHAT status:", e?.response?.status);
+        console.log("CHAT data:", e?.response?.data);
+        console.log("CHAT url:", e?.config?.baseURL, e?.config?.url);
 
-    return { message: msg };
+   
+      return { message: msg };
   }
 }

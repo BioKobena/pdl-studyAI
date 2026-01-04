@@ -27,32 +27,7 @@ interface Message {
 const ChatScreen = () => {
   const {subjectId} = useLocalSearchParams<{subjectId:string}>();
   const [sending, setSending]=useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: "Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ?",
-      isUser: true,
-      timestamp: new Date(),
-    },
-    {
-      id: '2',
-      text: "Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ? Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ? Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ? Peux-tu m'expliquer la partie de mon cours.",
-      isUser: false,
-      timestamp: new Date(),
-    },
-    {
-      id: '3',
-      text: "Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ?",
-      isUser: true,
-      timestamp: new Date(),
-    },
-    {
-      id: '4',
-      text: "Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ? Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ? Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ? Peux-tu m'expliquer la partie de mon cours.",
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
@@ -74,11 +49,8 @@ const ChatScreen = () => {
       text,
       isUser:true,
       timestamp:new Date(),
-    };
-    setMessages(prev=>[...prev,userMsg]);
-    setInputText("");
-   //ajout le message en cours
-
+    };    
+   //ajoute le message en cours
    const botId = (Date.now()+1).toString();
    const pendingBot:Message={
       id:botId,
@@ -87,7 +59,8 @@ const ChatScreen = () => {
       timestamp:new Date(),
     
    };
-    setMessages(prev=>[...prev,pendingBot]);
+    setMessages(prev => [...prev, userMsg, pendingBot]);
+    setInputText("");
     try{
       setSending(true);
       //recupère l'id du user
@@ -104,41 +77,20 @@ const ChatScreen = () => {
 
       //On remplace maintenant le bot par la vraie reponse 
 
-      setMessages(prev=>prev.map(m=>(m.id ===botId? {...m, text:res.message}:m))
-    );
+      setMessages(prev =>
+          prev.map(m => (m.id === botId ? { ...m, text: res.message ?? "Réponse vide" } : m))
+      );   
 
     }catch(e:any){
       const msg = e?.message ?? "Erreur IA";
             setMessages(prev=>
               prev.map(m=>
-                (m.id ===botId? {...m, text:"Erreur:$msg"}
+                (m.id ===botId? {...m, text:"Erreur: ${String(msg)}"}
               :m)
             ));
-
+ 
     }finally{
       setSending(false);
-    }
-
-  
-    if (inputText.trim()) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        text: inputText,
-        isUser: true,
-        timestamp: new Date(),
-      };
-      setMessages([...messages, newMessage]);
-      setInputText('');
-
-      setTimeout(() => {
-        const botResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          text: "Je traite votre demande...",
-          isUser: false,
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, botResponse]);
-      }, 1000);
     }
   };
 

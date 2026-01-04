@@ -264,7 +264,7 @@ export default function RegisterPage() {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white"
+          className="w-full bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white hover-cursor"
         >
           {loading ? "Création du compte…" : "S'inscrire"}
         </Button>

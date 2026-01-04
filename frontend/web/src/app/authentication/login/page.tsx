@@ -7,6 +7,9 @@ import { Input } from "@/component/ui/input";
 import { Label } from "@/component/ui/label";
 import { Mail } from "lucide-react";
 import PasswordInput from "@/component/ui/password-input";
+import {Toaster} from "react-hot-toast";
+import toast from "react-hot-toast";
+
 import {
   login,
   type LoginSuccess,
@@ -31,24 +34,26 @@ export default function LoginPage() {
       const u = res as LoginSuccess;
 
       saveUser({ id: u.id, email: u.email, fullName: u.fullName });
+      toast.success("Connexion réussie ✅", { duration: 900 });
 
-      // 🔥 Le loader reste visible jusqu'à ce que la page change
-      router.push("/dashboard/upload");
+       // laisse le toast s'afficher un peu puis navigation
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 250);
     } catch (e: unknown) {
       const message =
-        e instanceof Error
-          ? e.message
-          : typeof e === "string"
-            ? e
-            : "Erreur réseau/serveur";
+        e instanceof Error ? e.message : typeof e === "string" ? e : "Erreur réseau/serveur";
 
-      setErr(message);
-      setLoading(false); // on enlève le loader si erreur
+      // ✅ message déjà “friendly” si ça vient de auth.ts
+      toast.error(message, { duration: 1800 });
+
+      setLoading(false);
     }
   };
 
   return (
     <div>
+      <Toaster position="top-right" />
       <h2 className="text-[#3FA9D9] text-2xl font-semibold mb-6">CONNEXION</h2>
 
       <p className="text-gray-600 mb-8">

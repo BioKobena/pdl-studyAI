@@ -29,7 +29,7 @@ public class ChatService {
     public List<ChatMessage> getConversation(String userId, String subjectId) {
         ChatSession session = chatSessionRepo.findByUserIdAndSubjectId(userId, subjectId);
         if (session == null) {
-            session = new ChatSession();
+            session = new ChatSession(subjectId);
             session.setUserId(userId);
             session.setSubjectId(subjectId);
             session.setCreatedAt(Instant.now());
@@ -41,7 +41,7 @@ public class ChatService {
     public Mono<String> sendMessage(String userId, String subjectId, String userMessage) {
         ChatSession sessionInit = chatSessionRepo.findByUserIdAndSubjectId(userId, subjectId);
         if (sessionInit == null) {
-            sessionInit = new ChatSession();
+            sessionInit = new ChatSession(subjectId);
             sessionInit.setUserId(userId);
             sessionInit.setSubjectId(subjectId);
             sessionInit.setCreatedAt(Instant.now());

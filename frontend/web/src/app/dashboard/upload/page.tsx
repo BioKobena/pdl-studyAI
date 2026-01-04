@@ -143,7 +143,7 @@ function UploadFiles() {
         sessionStorage.setItem(`pdfName:${key}`, name);
         sessionStorage.setItem(`pdfBlobUrl:${key}`, blobUrl);
 
-        // 🔥 Finalisation 95 → 100%
+        //  Finalisation 95 → 100%
         if (progressInterval.current)
           clearInterval(progressInterval.current);
 

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { storage } from "../api/storage/token";
 
-const API_BASE_URL = "http://172.20.10.4:8085"; // IP Mac + port backend (PAS localhost)
+const API_BASE_URL = "http://192.168.1.68:8085"; // IP Mac + port backend (PAS localhost)
 
 export const api = axios.create({
   baseURL: API_BASE_URL,

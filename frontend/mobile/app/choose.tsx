@@ -8,23 +8,32 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const ChooseScreen = () => {
     const router = useRouter();
 
+    const { subjectId,fileName } = useLocalSearchParams <{
+        subjectId : string;
+        fileName? : string;
+
+    }>();
+    useEffect(()=> {
+        console.log("ChooseScreen subjectId:",subjectId,"fileName",fileName);
+    },[subjectId,fileName]);
+
     const handleGenerateQuiz = () => {
-        router.push('/(tabs)/quiz');
+        router.replace({pathname:"/(tabs)/quiz",params:{subjectId}});
     };
 
     const handleChat = () => {
-        router.push('/(tabs)/chat');
+        router.push({pathname:"/(tabs)/chat",params:{subjectId}});
     };
 
     const handleGenerateSummary = () => {
-        router.push('/(tabs)');
+        router.push({pathname:"/(tabs)",params:{subjectId}});
     };
 
     return (

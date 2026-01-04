@@ -34,7 +34,7 @@ const UploadScreen = () => {
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        type: ['application/pdf'],
         copyToCacheDirectory: true,
       });
 

@@ -8,10 +8,14 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
+import { storage } from '@/api/storage/token';
+import { sendChatMessageMobile } from '@/api/chat';
 
 interface Message {
   id: string;
@@ -21,6 +25,8 @@ interface Message {
 }
 
 const ChatScreen = () => {
+  const {subjectId} = useLocalSearchParams<{subjectId:string}>();
+  const [sending, setSending]=useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -54,7 +60,66 @@ const ChatScreen = () => {
     flatListRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async() => {
+    const text = inputText.trim();
+    if(!text || sending) return;
+
+    if(!subjectId){
+      Alert.alert("Erreur","subjectid Manquant. Reviens à l'étape précédante.");
+      return
+    }
+    //ajoute le message de l'utilisateur 
+    const userMsg:Message={
+      id: Date.now().toString(),
+      text,
+      isUser:true,
+      timestamp:new Date(),
+    };
+    setMessages(prev=>[...prev,userMsg]);
+    setInputText("");
+   //ajout le message en cours
+
+   const botId = (Date.now()+1).toString();
+   const pendingBot:Message={
+      id:botId,
+      text:"...",
+      isUser:false,
+      timestamp:new Date(),
+    
+   };
+    setMessages(prev=>[...prev,pendingBot]);
+    try{
+      setSending(true);
+      //recupère l'id du user
+
+      const user = await storage.getUser<{id:string}>();
+      if(!user?.id) throw new Error ("Utilisateur non trouvé");
+      //On appelle maintenant l'API 
+      const res = await sendChatMessageMobile({
+        userId:user.id,
+        subjectId,
+        message:text,
+
+      });
+
+      //On remplace maintenant le bot par la vraie reponse 
+
+      setMessages(prev=>prev.map(m=>(m.id ===botId? {...m, text:res.message}:m))
+    );
+
+    }catch(e:any){
+      const msg = e?.message ?? "Erreur IA";
+            setMessages(prev=>
+              prev.map(m=>
+                (m.id ===botId? {...m, text:"Erreur:$msg"}
+              :m)
+            ));
+
+    }finally{
+      setSending(false);
+    }
+
+  
     if (inputText.trim()) {
       const newMessage: Message = {
         id: Date.now().toString(),

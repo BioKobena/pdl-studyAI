@@ -10,6 +10,9 @@ import {
     Search,
     MessageSquare, Upload, FileText, ClipboardList
 } from 'lucide-react';
+import {useRouter} from "next/navigation";
+import {logout} from "@/lib/api/auth";
+import toast from "react-hot-toast";
 
 interface NavigationItem {
     id: string;
@@ -34,6 +37,7 @@ const navigationItems: NavigationItem[] = [
 
 
 export function Sidebar({className = ""}: SidebarProps) {
+    const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [activeItem, setActiveItem] = useState("dashboard");
@@ -55,12 +59,19 @@ export function Sidebar({className = ""}: SidebarProps) {
 
     const toggleSidebar = () => setIsOpen(!isOpen);
     const toggleCollapse = () => setIsCollapsed(!isCollapsed);
+    const handleNavigation = (item: NavigationItem) => {
+        setActiveItem(item.id);
+        router.push(item.href);
+        if (window.innerWidth < 768) setIsOpen(false);
+    };
 
-    const handleItemClick = (itemId: string) => {
-        setActiveItem(itemId);
-        if (window.innerWidth < 768) {
-            setIsOpen(false);
-        }
+
+    const handleLogout = () => {
+        logout();
+        toast.success("Déconnecté", {duration: 1200});
+        setTimeout(() => {
+            router.replace("/authentication/login");
+        }, 350);
     };
 
     return (
@@ -160,7 +171,7 @@ export function Sidebar({className = ""}: SidebarProps) {
                             return (
                                 <li key={item.id}>
                                     <button
-                                        onClick={() => handleItemClick(item.id)}
+                                        onClick={() => handleNavigation(item)}
                                         className={`
                       w-full flex items-center space-x-2.5 px-3 py-2.5 rounded-md text-left transition-all duration-200 group
                       ${isActive
@@ -240,12 +251,12 @@ export function Sidebar({className = ""}: SidebarProps) {
                     {/* Logout Button */}
                     <div className="p-3">
                         <button
-                            onClick={() => handleItemClick("logout")}
+                            onClick={handleLogout}
                             className={`
-                w-full flex items-center rounded-md text-left transition-all duration-200 group
-                text-red-600 hover:bg-red-50 hover:text-red-700
-                ${isCollapsed ? "justify-center p-2.5" : "space-x-2.5 px-3 py-2.5"}
-              `}
+                                      w-full flex items-center rounded-md text-left transition-all duration-200 group
+                                      text-red-600 hover:bg-red-50 hover:text-red-700
+                                      ${isCollapsed ? "justify-center p-2.5" : "space-x-2.5 px-3 py-2.5"}
+                                    `}
                             title={isCollapsed ? "Logout" : undefined}
                         >
                             <div className="flex items-center justify-center min-w-[24px]">
@@ -259,18 +270,19 @@ export function Sidebar({className = ""}: SidebarProps) {
                             {/* Tooltip for collapsed state */}
                             {isCollapsed && (
                                 <div
-                                    className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
+                                    className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50"
+                                >
                                     Logout
                                     <div
-                                        className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-1.5 h-1.5 bg-slate-800 rotate-45"/>
+                                        className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-1.5 h-1.5 bg-slate-800 rotate-45"
+                                    />
                                 </div>
                             )}
                         </button>
                     </div>
+
                 </div>
             </div>
-
-
         </>
     );
 }

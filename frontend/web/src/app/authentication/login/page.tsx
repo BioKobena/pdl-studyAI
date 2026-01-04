@@ -38,7 +38,7 @@ export default function LoginPage() {
 
        // laisse le toast s'afficher un peu puis navigation
       setTimeout(() => {
-        router.push("/dashboard/upload");
+        router.push("/dashboard");
       }, 250);
     } catch (e: unknown) {
       const message =

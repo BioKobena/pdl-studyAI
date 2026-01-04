@@ -16,33 +16,33 @@ import { resumeText } from '@/api/resume';
 
 const ResumeScreen = () => {
   const router = useRouter();
-  const {subjectId,fileName} =useLocalSearchParams<{subjectId: string, fileName:string}>();
-  const [loading,setLoading]= useState(false);
-  const [resume, setResume] = useState<{texteResume?:string} | null>(null);
+  const { subjectId, fileName } = useLocalSearchParams<{ subjectId: string, fileName: string }>();
+  const [loading, setLoading] = useState(false);
+  const [resume, setResume] = useState<{ texteResume?: string } | null>(null);
 
-  const handleGenerateResume = async () =>{
-    if(!subjectId){
-      Alert.alert("Erreur","SubjectId Manquant");
+  const handleGenerateResume = async () => {
+    if (!subjectId) {
+      Alert.alert("Erreur", "SubjectId Manquant");
       return;
     }
-    try{
+    try {
       setLoading(true);
       const data = await resumeText(subjectId);
       console.log("RESUME RAW =", JSON.stringify(data, null, 2));
       const resumeObj = data?.resume ?? data;
       console.log("RESUME OBJ =", JSON.stringify(resumeObj, null, 2));
-      setResume({texteResume: resumeObj.texteResume ?? resumeObj.content ??""});
-    }catch(e:any){
-      Alert.alert("Erreur",e?.message ?? "Erreur résumé");
+      setResume({ texteResume: resumeObj.texteResume ?? resumeObj.content ?? "" });
+    } catch (e: any) {
+      Alert.alert("Erreur", e?.message ?? "Erreur résumé");
 
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
 
 
   const handleStartChat = () => {
-    router.push({pathname:"/(tabs)/chat",params:{subjectId}});
+    router.push({ pathname: "/chat", params: { subjectId } });
   };
 
   return (
@@ -66,16 +66,16 @@ const ResumeScreen = () => {
             </View>
 
             <TouchableOpacity
-              style={[styles.actionButton, loading &&{opacity:0.6}]}
+              style={[styles.actionButton, loading && { opacity: 0.6 }]}
               onPress={handleGenerateResume}
               activeOpacity={0.8}
               disabled={loading}
             >
-              <Text style={styles.actionButtonText}>{loading ? "Génération..":"Générer mon résumé"}</Text>
-              {!loading &&(
-                 <Ionicons name="sparkles" size={20} color="#fff" style={styles.buttonIcon} />
+              <Text style={styles.actionButtonText}>{loading ? "Génération.." : "Générer mon résumé"}</Text>
+              {!loading && (
+                <Ionicons name="sparkles" size={20} color="#fff" style={styles.buttonIcon} />
               )}
-              </TouchableOpacity>
+            </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.contentContainer}>
@@ -91,7 +91,7 @@ const ResumeScreen = () => {
                 showsVerticalScrollIndicator={true}
               >
                 <Text style={styles.summaryText}>
-                  {resume?.texteResume?? "Résumé intoruvable " }
+                  {resume?.texteResume ?? "Résumé intoruvable "}
                 </Text>
               </ScrollView>
             </View>

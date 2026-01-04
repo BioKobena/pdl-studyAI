@@ -25,15 +25,15 @@ const ChooseScreen = () => {
     },[subjectId,fileName]);
 
     const handleGenerateQuiz = () => {
-        router.replace({pathname:"/(tabs)/quiz",params:{subjectId}});
+        router.replace({pathname:"/quiz",params:{subjectId}});
     };
 
     const handleChat = () => {
-        router.push({pathname:"/(tabs)/chat",params:{subjectId}});
+        router.push({pathname:"/chat",params:{subjectId}});
     };
 
     const handleGenerateSummary = () => {
-        router.push({pathname:"/(tabs)",params:{subjectId,fileName}});
+        router.push({pathname:"/summary",params:{subjectId,fileName}});
     };
 
     return (

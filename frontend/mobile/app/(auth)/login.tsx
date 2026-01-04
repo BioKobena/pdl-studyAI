@@ -14,8 +14,8 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import Header from '@/components/header/header';
-import {login} from '@/api/auth'
-import {Alert} from "react-native";
+import { login } from '@/api/auth'
+import { Alert } from "react-native";
 import toast from "react-native-toast-message";
 import axios from 'axios';
 
@@ -23,23 +23,24 @@ import axios from 'axios';
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
 
-  const handleLogin = async() => {
+  const handleLogin = async () => {
     if (!email || !password) return;
-      try{
-        await login(email,password)
-              toast.show(
-               { type:"success",text1:"Connexion réussie"});
-               setTimeout(() => router.replace("/home"), 400);
-      }catch (e: unknown) {
-    const msg =
-     axios.isAxiosError(e)
-      ? (e.response?.data as any)?.error ?? e.message
-      : "Erreur réseau/serveur";
+    try {
+      await login(email, password)
+      toast.show(
+        { type: "success", text1: "Connexion réussie" });
+      setTimeout(() => router.replace("/home"), 400);
+    } catch (e: unknown) {
+      const msg =
+        axios.isAxiosError(e)
+          ? (e.response?.data as any)?.error ?? e.message
+          : "Erreur réseau/serveur";
 
-     Alert.alert("Connexion impossible", msg);
+      Alert.alert("Connexion impossible", msg);
 
     }
 
@@ -78,16 +79,28 @@ const LoginScreen = () => {
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Mot de passe</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Entrez votre mot de passe"
-            placeholderTextColor="#999"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="Entrez votre mot de passe"
+              placeholderTextColor="#999"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeIcon}
+            >
+              <Ionicons
+                name={showPassword ? "eye-off" : "eye"}
+                size={22}
+                color="#2C94CB"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -223,6 +236,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Kufam-Bold',
     color: '#2C94CB',
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    // borderWidth: 2,
+    borderColor: '#2C94CB',
+    borderRadius: 7,
+    backgroundColor: '#fff',
+  },
+  eyeIcon: {
+    paddingHorizontal: 10,
+  },
+
 });
 
 export default LoginScreen;

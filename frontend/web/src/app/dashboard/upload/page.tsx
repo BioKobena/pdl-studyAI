@@ -139,7 +139,6 @@ function UploadFiles() {
         const text = await extractPdfTextFromFile(file);
 
         const key = crypto.randomUUID();
-        sessionStorage.removeItem("currentSubjectId");
         sessionStorage.setItem(`pdfText:${key}`, text);
         sessionStorage.setItem(`pdfName:${key}`, name);
         sessionStorage.setItem(`pdfBlobUrl:${key}`, blobUrl);

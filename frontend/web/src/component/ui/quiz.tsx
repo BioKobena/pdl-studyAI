@@ -114,36 +114,6 @@ async function loadQuizFromApi(subjectId: string): Promise<Question[]> {
   return transformBackendToFrontend(data.quiz);
 }
 
-export async function getQuiz(subjectId: string): Promise<Question[] | null> {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
-  const token = localStorage.getItem("auth_token");
-  if (!token) throw new Error("No auth token found. Please log in first.");
-
-  try {
-    const res = await fetch(`${base}/api/subject/${subjectId}/quiz`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) {
-      if (res.status === 404) return null; // pas de quiz existant
-      throw new Error(`Erreur GET Quiz: ${res.status}`);
-    }
-
-    const data: QuizResponse = await res.json();
-    if (!data.quiz) return null;
-
-    return transformBackendToFrontend(data.quiz);
-  } catch (e) {
-    console.error("getQuiz error:", e);
-    return null;
-  }
-}
-
-
 /* ---------- UI Component ---------- */
 export function Component() {
   const params = useSearchParams();

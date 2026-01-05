@@ -1,4 +1,4 @@
-import React, { useCallback,useState,useEffect } from 'react';
+import React, {useState,useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,14 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { storage } from '@/api/storage/token';
-import { listeSubjectUser } from '@/api/subject';
+import { deleteSubject, listeSubjectUser } from '@/api/subject';
 import { useFocusEffect } from '@react-navigation/native';
 import LogoutButton from "@/components/ui/LogoutButton";
 
 
 interface UploadedFile {
   id: string;
+  subjectId?: string;
   name: string;
   size: string;
   status: "success" | "error" | "pending";
@@ -83,7 +84,11 @@ const UploadScreen = () => {
         user?.id,
         subjects.map(s => ({ id: s.id, userId: s.userId, title: s.title }))
       );
-      } finally {
+      } catch (e: any) {
+      if (!alive) return;
+      Alert.alert("Erreur", e?.message ?? "Impossible de charger les fichiers");``
+      }
+      finally {
         if (!alive) return;
         setLoadingSubjects(false);
       }
@@ -116,13 +121,14 @@ const UploadScreen = () => {
 
         const newFile: UploadedFile = {
           id: Date.now().toString(),
+          subjectId:undefined,
           name: file.name,
           size: `${fileSizeMB} Mo`,
-          status: 'success',
+          status: 'pending',
           uri: file.uri,
         };
 
-        setUploadedFiles([newFile, ...uploadedFiles]);
+        setUploadedFiles(prev=>[newFile, ...prev]);
         setSelectedFile(newFile);
         
         router.push({
@@ -140,7 +146,7 @@ const UploadScreen = () => {
     }
   };
 
-  const removeFile = (id: string) => {
+  const removeFile = (file: UploadedFile) => {
     Alert.alert(
       'Supprimer le fichier',
       'Êtes-vous sûr de vouloir supprimer ce fichier ?',
@@ -149,10 +155,29 @@ const UploadScreen = () => {
         {
           text: 'Supprimer',
           style: 'destructive',
-          onPress: () => {
-            setUploadedFiles(uploadedFiles.filter(file => file.id !== id));
-            if (selectedFile?.id === id) {
+          onPress: async () => {
+            try{
+              
+              const subjectId = file.subjectId ?? file.id;
+              await deleteSubject(subjectId); 
+
+            // update UI
+            setUploadedFiles(prev => prev.filter(f => (f.subjectId ?? f.id) !== subjectId));
+            if ((selectedFile?.subjectId ?? selectedFile?.id) === subjectId) {
               setSelectedFile(null);
+            }
+
+            // update cache
+            const userId = await storage.getUserId?.(); // si tu l’as
+            if (userId) {
+              const cached = await storage.getCachedSubjects(userId);
+              await storage.setCachedSubjects(userId, cached.filter(s => s.id !== subjectId));
+            }
+         
+            
+           
+            }catch{
+                Alert.alert("Impossible de supprimer le fichier")
             }
           },
         },
@@ -220,7 +245,7 @@ const UploadScreen = () => {
         <View style={styles.filesSection}>
           <Text style={styles.filesSectionTitle}>Fichiers récemment téléchargés</Text>
           {loadingSubjects && (
-            <Text style={{ color: "#666", marginBottom: 10 }}>Chargement…</Text>
+            <Text style={{ color: "#666",    fontFamily: 'Kufam-SemiBold', marginBottom: 10 }}>Chargement…</Text>
           )}
 
           {uploadedFiles.map((file) => (
@@ -247,7 +272,7 @@ const UploadScreen = () => {
               <View style={styles.fileRight}>
                 <Text style={styles.fileSize}>{file.size}</Text>
                 <TouchableOpacity 
-                  onPress={() => removeFile(file.id)}
+                  onPress={() => removeFile(file)}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Ionicons name="trash-outline" size={20} color="#999" />

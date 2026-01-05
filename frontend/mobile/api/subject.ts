@@ -49,3 +49,15 @@ export async function listeSubjectUser(userId:string): Promise<Subject[]> {
 
 }
 
+export async function deleteSubject  (subjectId:string) {
+
+  if (!subjectId) throw new Error("Subject Manquant ")
+ 
+  const token =await storage.getAccessToken();
+  if (!token) throw new Error("Pas connecté");
+  const {data} = await api.delete(`/api/subjects/${subjectId}`, {
+  headers: { Authorization: `Bearer ${token}` },
+  });
+  return data;
+}
+

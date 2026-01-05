@@ -22,7 +22,18 @@ function UploadSuccess() {
   const [creatingSubject, setCreatingSubject] = useState(false);
   const [subjectId, setSubjectId] = useState<string>("");
 
-  // ✅ anti double call (dev/StrictMode)
+  // Nouveau : récupération du subjectId venant du Dashboard
+  const currentSubjectId = sessionStorage.getItem("currentSubjectId");
+
+  // Message conditionnel selon si c'est un fichier existant ou nouvel upload
+  const message = useMemo(() => {
+    // si on a un subjectId venant du dashboard ou déjà créé => récupéré
+    if (!currentSubjectId) return "Fichier récupéré avec succès";
+    return "Fichier extrait avec succès";
+  }, [currentSubjectId]);
+
+
+  // anti double call (dev/StrictMode)
   const createOnceRef = useRef(false);
 
   // -------------------------------------------------------
@@ -54,8 +65,8 @@ function UploadSuccess() {
     if (existingSubjectId) {
       setSubjectId(existingSubjectId);
 
-      // ✅ mode "1 seul PDF actif"
-      sessionStorage.setItem("activeSubjectId", existingSubjectId);
+      // mode "1 seul PDF actif"
+      sessionStorage.setItem("currentSubjectId", existingSubjectId);
       sessionStorage.setItem("activePdfName", name || "Document"); // optionnel
     }
 
@@ -80,27 +91,33 @@ function UploadSuccess() {
 
   // -------------------------------------------------------
   // 2) Créer le subject (1 seule fois par key)
+  // uniquement si c'est un nouvel upload (pas si sujet déjà existant)
   // -------------------------------------------------------
   const ensureSubjectId = useCallback(async (): Promise<string> => {
+    if (currentSubjectId) {
+      // le subject existe déjà, pas besoin de création
+      setSubjectId(currentSubjectId);
+      return currentSubjectId;
+    }
+
     if (!key) throw new Error("key manquant");
     if (!sessText.trim()) throw new Error("Aucun texte extrait");
 
-    // déjà en mémoire ?
     const cached = sessionStorage.getItem(`subjectId:${key}`);
     if (cached) {
-      // ✅ garantir activeSubjectId même si déjà créé
-      sessionStorage.setItem("activeSubjectId", cached);
-      sessionStorage.setItem("activePdfName", sessName || "Document"); // optionnel
+      sessionStorage.setItem("currentSubjectId", cached);
+      sessionStorage.setItem("activePdfName", sessName || "Document");
+      setSubjectId(cached);
       return cached;
     }
 
-    // si création déjà en cours -> attendre
     if (creatingSubject) {
       await new Promise((r) => setTimeout(r, 250));
       const cachedAfter = sessionStorage.getItem(`subjectId:${key}`);
       if (cachedAfter) {
-        sessionStorage.setItem("activeSubjectId", cachedAfter);
-        sessionStorage.setItem("activePdfName", sessName || "Document"); // optionnel
+        sessionStorage.setItem("currentSubjectId", cachedAfter);
+        sessionStorage.setItem("activePdfName", sessName || "Document");
+        setSubjectId(cachedAfter);
         return cachedAfter;
       }
     }
@@ -108,66 +125,53 @@ function UploadSuccess() {
     setCreatingSubject(true);
     try {
       const userId = getUserId();
-      const payload = {
-        userId,
-        title: sessName || "Document",
-        extractText: sessText,
-      };
-
+      const payload = { userId, title: sessName || "Document", extractText: sessText };
       const res = await createSubject(payload);
 
       const id =
-        (res as any)?.subjectId ??
-        (res as any)?.id ??
-        (res as any)?.subject?.id;
+          (res as any)?.subjectId ??
+          (res as any)?.id ??
+          (res as any)?.subject?.id;
 
-      if (!id) {
-        console.error("createSubject response:", res);
-        throw new Error("Le backend n’a pas renvoyé de subjectId");
-      }
+      if (!id) throw new Error("Le backend n’a pas renvoyé de subjectId");
 
       const idStr = String(id);
-
-      // stock key-specific (utile pour debug / retour)
       sessionStorage.setItem(`subjectId:${key}`, idStr);
       setSubjectId(idStr);
-
-      // mode "1 seul PDF actif"
-      sessionStorage.setItem("activeSubjectId", idStr);
-      sessionStorage.setItem("activePdfName", sessName || "Document"); // optionnel
+      sessionStorage.setItem("currentSubjectId", idStr);
+      sessionStorage.setItem("activePdfName", sessName || "Document");
 
       return idStr;
     } finally {
       setCreatingSubject(false);
     }
-  }, [key, sessName, sessText, creatingSubject]);
+  }, [key, sessName, sessText, creatingSubject, currentSubjectId]);
 
   // -------------------------------------------------------
-  // 3) Auto-create dès que le texte est prêt (sans bloquer le chargement)
+  // 3) Auto-create si nouvel upload (pas si subject existant)
   // -------------------------------------------------------
   useEffect(() => {
     if (!key) return;
     if (!sessText.trim()) return;
     if (subjectId) return;
+    if (currentSubjectId) return; //  ne pas recréer si sujet existant
 
     if (createOnceRef.current) return;
     createOnceRef.current = true;
 
     ensureSubjectId().catch((e) => {
       console.error("ensureSubjectId auto:", e);
-      createOnceRef.current = false; // permet retry
+      createOnceRef.current = false;
     });
-  }, [key, sessText, subjectId, ensureSubjectId]);
+  }, [key, sessText, subjectId, ensureSubjectId, currentSubjectId]);
 
   // -------------------------------------------------------
-  // 4) Redirection : garantit subjectId puis go sans params
+  // 4) Redirection : garantit subjectId puis go
   // -------------------------------------------------------
   const startLoadingAndRedirect = async (target: "resume" | "chatter" | "quiz") => {
     setLoadingAction(true);
     try {
       await ensureSubjectId();
-
-      // ✅ plus besoin de passer subjectId/key dans l’URL
       router.push(`/dashboard/${target}`);
     } catch (e) {
       console.error(e);
@@ -177,14 +181,21 @@ function UploadSuccess() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
-      {(loadingAction || creatingSubject) && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-3">
-            <span className="h-10 w-10 animate-spin rounded-full border-4 border-[#3FA9D9] border-t-transparent" />
-            <p className="text-[#3FA9D9] font-medium">
-              {creatingSubject ? "Création du sujet…" : "Chargement…"}
-            </p>
+      <div className="min-h-screen bg-gray-50 relative">
+        {(loadingAction || creatingSubject) && (
+            <div className="fixed inset-0 z-50 grid place-items-center bg-white/70 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-3">
+                <span className="h-10 w-10 animate-spin rounded-full border-4 border-[#3FA9D9] border-t-transparent" />
+                <p className="text-[#3FA9D9] font-medium">
+                  {creatingSubject ? "Création du sujet…" : "Chargement…"}
+                </p>
+              </div>
+            </div>
+        )}
+
+        <main className="max-w-2xl mx-auto px-6 py-5">
+          <div className="text-center mb-4">
+            <p className="text-2xl text-[#3FA9D9]">Révise plus vite</p>
           </div>
         </div>
       )}
@@ -213,17 +224,16 @@ function UploadSuccess() {
                   </div>
                 </div>
               </div>
+
+              {sessName && (
+                  <p className="text-[#8b0000] mt-2">
+                    Fichier : <b>{sessName}</b>
+                  </p>
+              )}
             </div>
-
-            {sessName && (
-              <p className="text-[#8b0000] mt-2">
-                Fichier : <b>{sessName}</b>
-              </p>
-            )}
           </div>
-        </div>
 
-        {hasText ? (
+          {/*  Message conditionnel */}
           <div className="mb-6 inline-flex flex-wrap items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
             <span>✓PDF analysé</span>
             <span>• {(meta?.chars ?? sessText.length).toLocaleString()} caractères</span>
@@ -232,29 +242,28 @@ function UploadSuccess() {
           <div className="mb-6 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
             Aucun texte extrait — ce PDF semble être un scan.
           </div>
-        )}
 
-        <div className="flex flex-col items-center justify-center space-y-6">
-          <h2 className="text-2xl text-gray-700">
-            Commençons votre révision, choisissez une option :
-          </h2>
+          <div className="flex flex-col items-center justify-center space-y-6">
+            <h2 className="text-2xl text-gray-700">
+              Commençons votre révision, choisissez une option :
+            </h2>
 
-          <div className="mt-6 flex flex-wrap gap-3 justify-center">
-            <div onClick={() => startLoadingAndRedirect("resume")}>
-              <OptionButton icon="/resume.png" label="Resume" />
-            </div>
+            <div className="mt-6 flex flex-wrap gap-3 justify-center">
+              <div onClick={() => startLoadingAndRedirect("resume")}>
+                <OptionButton icon="/resume.png" label="Resume" />
+              </div>
 
-            <div onClick={() => startLoadingAndRedirect("chatter")}>
-              <OptionButton icon="/chat.png" label="Chat" />
-            </div>
+              <div onClick={() => startLoadingAndRedirect("chatter")}>
+                <OptionButton icon="/chat.png" label="Chat" />
+              </div>
 
-            <div onClick={() => startLoadingAndRedirect("quiz")}>
-              <OptionButton icon="/quizz.png" label="Quizz" />
+              <div onClick={() => startLoadingAndRedirect("quiz")}>
+                <OptionButton icon="/quizz.png" label="Quizz" />
+              </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
   );
 }
 

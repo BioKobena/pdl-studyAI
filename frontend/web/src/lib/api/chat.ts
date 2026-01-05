@@ -75,3 +75,40 @@ export async function sendChatMessage(
     return { message: "Impossible de contacter le serveur." };
   }
 }
+
+
+
+export async function getChat(subjectId: string): Promise<ChatResponse | null> {
+  if (!subjectId) return null;
+
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!base) return null;
+
+  const token = getToken();
+
+  try {
+    const res = await fetch(`${base}/api/subject/${subjectId}/chat`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!res.ok) {
+      if (res.status === 404) return null; // pas de chat existant
+      throw new Error(`Erreur GET Chat: ${res.status}`);
+    }
+
+    if (isJsonResponse(res)) {
+      const data = await res.json();
+      return data as ChatResponse;
+    }
+
+    return null;
+  } catch (e) {
+    console.error("getChat error:", e);
+    return null;
+  }
+}
+

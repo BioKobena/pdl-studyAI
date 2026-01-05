@@ -42,7 +42,7 @@ public class QuizController {
                 "                }\r\n" + //
                 "              ]\r\n" + //
                 "            }";
-    private final String promptHeader = "Génère un quiz au format JSON avec des questions, le nombre de reponse correcte sera aléatoire\n\n";
+    private final String promptHeader = "Génère un quiz au format JSON avec des questions, avec une seule reponse correcte\n\n";
 
     // constructor
     public QuizController(QuizService quizService, SubjectService subjectService, StudioAiService studioAiService) {

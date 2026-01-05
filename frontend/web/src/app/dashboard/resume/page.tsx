@@ -54,7 +54,7 @@ function App() {
         </div>
       )}
 
-      <div className="flex items-center justify-center gap-12 mb-12">
+      <div className="flex items-center justify-center gap-12 mb-5">
         <button
           onClick={() => router.back()}
           className="text-[#3FA9D9] hover:opacity-80 transition-opacity"

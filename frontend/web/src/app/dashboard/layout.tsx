@@ -56,7 +56,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex gap-4 items-center">
             <span className="opacity-90">{isClient ? name : "Bonjour"}</span>
 
-            <Link href="#" className="hover:underline">
+            <Link href="/" className="hover:underline">
               Accueil
             </Link>
 

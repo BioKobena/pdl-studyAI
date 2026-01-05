@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { FileText } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import OptionButton from "../../../component/ui/option-button";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createSubject } from "@/lib/api/subject";
@@ -190,7 +190,13 @@ function UploadSuccess() {
       )}
 
       <main className="max-w-2xl mx-auto px-6 py-5">
-        <div className="text-center mb-4">
+        <div className="flex items-center justify-center gap-2 text-center mb-4" >
+          <button
+          onClick={() => router.back()}
+          className="text-[#3FA9D9] hover:opacity-80 transition-opacity"
+        >
+          <ArrowLeft size={25} strokeWidth={3} />
+          </button>
           <p className="text-2xl text-[#3FA9D9]">Révise plus vite</p>
         </div>
 
@@ -221,7 +227,6 @@ function UploadSuccess() {
           <div className="mb-6 inline-flex flex-wrap items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
             <span>✓PDF analysé</span>
             <span>• {(meta?.chars ?? sessText.length).toLocaleString()} caractères</span>
-            {subjectId ? <span>• subjectId: {subjectId}</span> : null}
           </div>
         ) : (
           <div className="mb-6 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">

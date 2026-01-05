@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { FileText } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import OptionButton from "../../../component/ui/option-button";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createSubject } from "@/lib/api/subject";
@@ -197,18 +197,30 @@ function UploadSuccess() {
           <div className="text-center mb-4">
             <p className="text-2xl text-[#3FA9D9]">Révise plus vite</p>
           </div>
+        </div>
+      )}
 
-          <div className="mb-10 border-2 rounded-lg p-8 bg-white">
-            <div className="flex flex-col items-center justify-center gap-2">
-              <div className="relative w-32 h-32">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-24 h-28 bg-white border border-gray-300 rounded-lg shadow-md flex flex-col items-center justify-center overflow-hidden">
-                    <div className="flex-1 flex items-center justify-center">
-                      <FileText className="w-12 h-12 text-[#c94a4a]" />
-                    </div>
-                    <div className="bg-[#c94a4a] w-full py-2 text-white text-center">
-                      PDF
-                    </div>
+      <main className="max-w-2xl mx-auto px-6 py-5">
+        <div className="flex items-center justify-center gap-2 text-center mb-4" >
+          <button
+          onClick={() => router.back()}
+          className="text-[#3FA9D9] hover:opacity-80 transition-opacity"
+        >
+          <ArrowLeft size={25} strokeWidth={3} />
+          </button>
+          <p className="text-2xl text-[#3FA9D9]">Révise plus vite</p>
+        </div>
+
+        <div className="mb-10 border-2 rounded-lg p-8 bg-white">
+          <div className="flex flex-col items-center justify-center gap-2">
+            <div className="relative w-32 h-32">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-24 h-28 bg-white border border-gray-300 rounded-lg shadow-md flex flex-col items-center justify-center overflow-hidden">
+                  <div className="flex-1 flex items-center justify-center">
+                    <FileText className="w-12 h-12 text-[#c94a4a]" />
+                  </div>
+                  <div className="bg-[#c94a4a] w-full py-2 text-white text-center">
+                    PDF
                   </div>
                 </div>
               </div>
@@ -223,8 +235,12 @@ function UploadSuccess() {
 
           {/*  Message conditionnel */}
           <div className="mb-6 inline-flex flex-wrap items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
-            <span>{message}</span>
-            {hasText && <span>• {(meta?.chars ?? sessText.length).toLocaleString()} caractères</span>}
+            <span>✓PDF analysé</span>
+            <span>• {(meta?.chars ?? sessText.length).toLocaleString()} caractères</span>
+          </div>
+        ) : (
+          <div className="mb-6 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+            Aucun texte extrait — ce PDF semble être un scan.
           </div>
 
           <div className="flex flex-col items-center justify-center space-y-6">

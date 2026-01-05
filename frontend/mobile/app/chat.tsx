@@ -8,10 +8,14 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
+import { storage } from '@/api/storage/token';
+import { sendChatMessageMobile } from '@/api/chat';
 
 interface Message {
   id: string;
@@ -21,32 +25,9 @@ interface Message {
 }
 
 const ChatScreen = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: "Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ?",
-      isUser: true,
-      timestamp: new Date(),
-    },
-    {
-      id: '2',
-      text: "Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ? Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ? Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ? Peux-tu m'expliquer la partie de mon cours.",
-      isUser: false,
-      timestamp: new Date(),
-    },
-    {
-      id: '3',
-      text: "Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ?",
-      isUser: true,
-      timestamp: new Date(),
-    },
-    {
-      id: '4',
-      text: "Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ? Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ? Peux-tu m'expliquer la partie de mon cours parlant des capitales du monde ? Peux-tu m'expliquer la partie de mon cours.",
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
+  const {subjectId} = useLocalSearchParams<{subjectId:string}>();
+  const [sending, setSending]=useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
@@ -54,26 +35,62 @@ const ChatScreen = () => {
     flatListRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
-  const handleSend = () => {
-    if (inputText.trim()) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        text: inputText,
-        isUser: true,
-        timestamp: new Date(),
-      };
-      setMessages([...messages, newMessage]);
-      setInputText('');
+  const handleSend = async() => {
+    const text = inputText.trim();
+    if(!text || sending) return;
 
-      setTimeout(() => {
-        const botResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          text: "Je traite votre demande...",
-          isUser: false,
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, botResponse]);
-      }, 1000);
+    if(!subjectId){
+      Alert.alert("Erreur","subjectid Manquant. Reviens à l'étape précédante.");
+      return
+    }
+    //ajoute le message de l'utilisateur 
+    const userMsg:Message={
+      id: Date.now().toString(),
+      text,
+      isUser:true,
+      timestamp:new Date(),
+    };    
+   //ajoute le message en cours
+   const botId = (Date.now()+1).toString();
+   const pendingBot:Message={
+      id:botId,
+      text:"...",
+      isUser:false,
+      timestamp:new Date(),
+    
+   };
+    setMessages(prev => [...prev, userMsg, pendingBot]);
+    setInputText("");
+    try{
+      setSending(true);
+      //recupère l'id du user
+
+      const user = await storage.getUser<{id:string}>();
+      if(!user?.id) throw new Error ("Utilisateur non trouvé");
+      //On appelle maintenant l'API 
+      const res = await sendChatMessageMobile({
+        userId:user.id,
+        subjectId,
+        message:text,
+
+      });
+
+      //On remplace maintenant le bot par la vraie reponse 
+
+      setMessages(prev =>
+          prev.map(m => (m.id === botId ? { ...m, text: res.message ?? "Réponse vide" } : m))
+      );   
+
+    }catch(e:any){
+      const msg = e?.message ?? "Erreur IA";
+            setMessages(prev=>
+              prev.map(m=>
+                (m.id ===botId? {...m, text:"Erreur: ${String(msg)}"}
+              :m)
+            ));
+ 
+    }finally{
+      setSending(false);
     }
   };
 

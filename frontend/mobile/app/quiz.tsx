@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { createQuizForUi } from '@/api/quiz';
+import { UiQuestion } from '@/api/quiz';
 
 interface Answer {
   id: string;
@@ -26,88 +30,82 @@ interface Question {
 
 const QuizScreen = () => {
   const router = useRouter();
+    const { subjectId } = useLocalSearchParams<{ subjectId: string }>();
+
+  const [questions, setQuestions] = useState<UiQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
 
-  const questions: Question[] = [
-    {
-      id: '1',
-      question: "Quel est la capitale de la Côte d'Ivoire ?",
-      answers: [
-        { id: '1', text: 'Abidjan', isCorrect: true },
-        { id: '2', text: 'Yamoussoukro', isCorrect: false },
-        { id: '3', text: 'Bouaké', isCorrect: false },
-        { id: '4', text: 'Daloa', isCorrect: false },
-      ],
-    },
-    {
-      id: '2',
-      question: 'Quel est la capitale du Mali ?',
-      answers: [
-        { id: '1', text: 'Bamako', isCorrect: true },
-        { id: '2', text: 'Lisbonne', isCorrect: false },
-        { id: '3', text: 'Dakar', isCorrect: false },
-        { id: '4', text: 'Conakry', isCorrect: false },
-      ],
-      selectedAnswer: '2',
-    },
-    {
-      id: '3',
-      question: 'Quel est la capitale de la France ?',
-      answers: [
-        { id: '1', text: 'Paris', isCorrect: true },
-        { id: '2', text: 'Lyon', isCorrect: false },
-        { id: '3', text: 'Marseille', isCorrect: false },
-        { id: '4', text: 'Toulouse', isCorrect: false },
-      ],
-      selectedAnswer: '3',
-    },
-    {
-      id: '4',
-      question: "Quel est la capitale de l'Espagne ?",
-      answers: [
-        { id: '1', text: 'Madrid', isCorrect: true },
-        { id: '2', text: 'Barcelone', isCorrect: false },
-        { id: '3', text: 'Séville', isCorrect: false },
-        { id: '4', text: 'Valence', isCorrect: false },
-      ],
-      selectedAnswer: '1',
-    },
-    {
-      id: '5',
-      question: "Quel est la capitale de l'Espagne ?",
-      answers: [
-        { id: '1', text: 'Madrid', isCorrect: true },
-        { id: '2', text: 'Barcelone', isCorrect: false },
-        { id: '3', text: 'Séville', isCorrect: false },
-        { id: '4', text: 'Valence', isCorrect: false },
-      ],
-      selectedAnswer: '1',
-    },
-  ];
+  const [loading, setLoading] = useState(true);
+
+  /**Load quiz depuis l’API */
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        if (!subjectId) {
+          Alert.alert("Erreur", "SubjectId manquant (viens depuis Choose avec params).");
+          router.back();
+          return;
+        }
+
+        setLoading(true);
+        const qs = await createQuizForUi(subjectId);
+
+        if (!alive) return;
+
+        setQuestions(qs);
+        setCurrentQuestionIndex(0);
+        setShowResults(false);
+        setSelectedAnswer(null);
+      } catch (e: any) {
+        if (!alive) return;
+        Alert.alert("Erreur", e?.message ?? "Erreur chargement quiz");
+        router.back();
+      } finally {
+        if (!alive) return;
+        setLoading(false);
+      }
+    })();
+
+    return () => { alive = false; };
+  }, [subjectId]);
 
   const currentQuestion = questions[currentQuestionIndex];
 
+  /** IMPORTANT: on enregistre la réponse choisie DANS la question */
   const handleAnswerSelect = (answerId: string) => {
     setSelectedAnswer(answerId);
+
+    setQuestions(prev =>
+      prev.map((q, idx) =>
+        idx === currentQuestionIndex ? { ...q, selectedAnswer: answerId } : q
+      )
+    );
   };
 
   const handleNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelectedAnswer(null);
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
+
+      //remettre la sélection de la question suivante (si l’utilisateur revient plus tard)
+      setSelectedAnswer(questions[nextIndex]?.selectedAnswer ?? null);
     } else {
       setShowResults(true);
     }
   };
 
   const handleRestart = () => {
+    setQuestions(prev => prev.map(q => ({ ...q, selectedAnswer: undefined })));
     setCurrentQuestionIndex(0);
     setSelectedAnswer(null);
     setShowResults(false);
   };
 
+  /**Score basé sur selectedAnswer réel */
   const calculateScore = () => {
     let correct = 0;
     questions.forEach((q) => {
@@ -118,7 +116,36 @@ const QuizScreen = () => {
     });
     return correct;
   };
+  
 
+
+if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <StatusBar style="dark" />
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 12 }}>
+          <ActivityIndicator size="large" />
+          <Text style={{ color: "#666" }}>Chargement du quiz…</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!questions.length) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <StatusBar style="dark" />
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+          <Text style={{ fontFamily: "Kufam-Bold", color: "#2C94CB" }}>Aucune question</Text>
+          <Text style={{ color: "#666", marginTop: 8, textAlign: "center" }}>
+            Aucun quiz n’a été généré pour ce sujet.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  /** ---------- RESULTATS ---------- */
   if (showResults) {
     const score = calculateScore();
 
@@ -128,8 +155,10 @@ const QuizScreen = () => {
 
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>ANALYSE EN COMPOSANTES PRINCIPALES</Text>
-            <Text style={styles.scoreText}>NOTE : <Text style={styles.scoreValue}>{score}/5 😊</Text></Text>
+            <Text style={styles.headerTitle}>QUIZ</Text>
+            <Text style={styles.scoreText}>
+              NOTE : <Text style={styles.scoreValue}>{score}/{questions.length} 😊</Text>
+            </Text>
           </View>
         </View>
 
@@ -140,25 +169,18 @@ const QuizScreen = () => {
 
             return (
               <View key={q.id} style={styles.resultCard}>
-                <Text style={styles.resultQuestionLabel}>Question: {index + 1}/5</Text>
+                <Text style={styles.resultQuestionLabel}>
+                  Question: {index + 1}/{questions.length}
+                </Text>
                 <Text style={styles.resultQuestion}>{q.question}</Text>
                 <View style={[styles.resultAnswer, isCorrect ? styles.correctAnswer : styles.wrongAnswer]}>
-                  <Text style={styles.resultAnswerText}>{selectedAns?.text}</Text>
+                  <Text style={styles.resultAnswerText}>
+                    {selectedAns?.text ?? "Aucune réponse"}
+                  </Text>
                 </View>
               </View>
             );
           })}
-
-          <View style={styles.feedbackSection}>
-            <View style={styles.feedbackItem}>
-              <Text style={styles.feedbackLabel}>Points forts :</Text>
-              <Text style={styles.feedbackText}>Réponses rapides pour les bonnes réponses, bonne maîtrise.</Text>
-            </View>
-            <View style={styles.feedbackItem}>
-              <Text style={styles.feedbackLabelWeak}>Points faibles :</Text>
-              <Text style={styles.feedbackText}>Moins bonne maîtrise des capitales Africaines</Text>
-            </View>
-          </View>
 
           <TouchableOpacity style={styles.restartButton} onPress={handleRestart} activeOpacity={0.8}>
             <Text style={styles.restartButtonText}>Recommencer</Text>
@@ -168,6 +190,7 @@ const QuizScreen = () => {
     );
   }
 
+  /** ---------- QUIZ ---------- */
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style="dark" />
@@ -177,8 +200,8 @@ const QuizScreen = () => {
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>ANALYSE EN COMPOSANTES PRINCIPALES</Text>
-          <Text style={styles.headerSubtitle}>5 Questions</Text>
+          <Text style={styles.headerTitle}>QUIZ</Text>
+          <Text style={styles.headerSubtitle}>{questions.length} Questions</Text>
         </View>
       </View>
 
@@ -186,12 +209,15 @@ const QuizScreen = () => {
         <View style={styles.quizInfo}>
           <Text style={styles.quizTitle}>QUIZZ CONCERNANT VOTRE DOCUMENT</Text>
           <Text style={styles.quizDescription}>
-            Veuillez répondre aux questions et voir les réponses, vous avez un temps de réponses de 10 secondes.
+            Veuillez répondre aux questions et voir les réponses.
           </Text>
         </View>
 
         <View style={styles.questionCard}>
-          <Text style={styles.questionLabel}>Question: {currentQuestionIndex + 1}/5</Text>
+          <Text style={styles.questionLabel}>
+            Question: {currentQuestionIndex + 1}/{questions.length}
+          </Text>
+
           <Text style={styles.questionText}>{currentQuestion.question}</Text>
 
           {currentQuestion.answers.map((answer) => (
@@ -204,22 +230,26 @@ const QuizScreen = () => {
               onPress={() => handleAnswerSelect(answer.id)}
               activeOpacity={0.7}
             >
-              <Text style={[
-                styles.answerText,
-                selectedAnswer === answer.id && styles.selectedAnswerText
-              ]}>
+              <Text
+                style={[
+                  styles.answerText,
+                  selectedAnswer === answer.id && styles.selectedAnswerText,
+                ]}
+              >
                 {answer.text}
               </Text>
             </TouchableOpacity>
           ))}
 
           <TouchableOpacity
-            style={styles.nextButton}
+            style={[styles.nextButton, !selectedAnswer && { opacity: 0.4 }]}
             onPress={handleNextQuestion}
             activeOpacity={0.8}
             disabled={!selectedAnswer}
           >
-            <Text style={styles.nextButtonText}>Prochaine question</Text>
+            <Text style={styles.nextButtonText}>
+              {currentQuestionIndex === questions.length - 1 ? "Terminer" : "Prochaine question"}
+            </Text>
             <Ionicons name="arrow-forward" size={20} color="#2C94CB" />
           </TouchableOpacity>
         </View>
@@ -227,6 +257,7 @@ const QuizScreen = () => {
     </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

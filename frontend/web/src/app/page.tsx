@@ -6,6 +6,8 @@ import {Navbar} from "@/component/ui/navbar";
 import FooterSection from "@/component/ui/footer";
 import {Button} from "@/component/ui/button";
 import {useRouter} from "next/navigation";
+import { useEffect, useState } from "react";
+import { getUser } from "@/lib/session";
 
 const testimonials = [
     {
@@ -41,6 +43,12 @@ const testimonials = [
 
 export default function LandingPage() {
     const router = useRouter();
+  const [user, setUser] = useState<{ fullName?: string } | null>(null);
+
+  useEffect(() => {
+    const u = getUser();
+    setUser(u ?? null);
+  }, []);
 
     return (
         <div>
@@ -63,20 +71,31 @@ export default function LandingPage() {
                                 Upload un document et StudyAI génère automatiquement des résumés, des quiz et un assistant intelligent pour t’aider à étudier plus vite et mieux.
                             </p>
 
-                            {/* Buttons existants */}
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-16">
-                                <Button
-                                    onClick={() => router.push("/authentication/login")}
-                                    className="bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white px-12 py-6 rounded-full min-w-[200px] font-[var(--font-kufam-sans)]"
-                                >
-                                    Connexion
-                                </Button>
-                                <Button
-                                    onClick={() => router.push("/authentication/register")}
-                                    className="bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white px-12 py-6 rounded-full min-w-[200px] font-[var(--font-kufam-sans)]"
-                                >
-                                    Inscription
-                                </Button>
+                            {/* Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-16">
+                {user ? (
+                  <Button
+                    onClick={() => router.push("/dashboard/upload")}
+                    className="bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white px-12 py-6 rounded-full min-w-[200px] font-[var(--font-kufam-sans)]"
+                  >
+                    Commencer
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      onClick={() => router.push("/authentication/login")}
+                      className="bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white px-12 py-6 rounded-full min-w-[200px] font-[var(--font-kufam-sans)]"
+                    >
+                      Connexion
+                    </Button>
+                    <Button
+                      onClick={() => router.push("/authentication/register")}
+                      className="bg-[#3FA9D9] hover:bg-[#2B7FB5] text-white px-12 py-6 rounded-full min-w-[200px] font-[var(--font-kufam-sans)]"
+                    >
+                      Inscription
+                    </Button>
+                  </>
+                )}
                             </div>
                         </div>
 

@@ -287,6 +287,12 @@ export const CarouselDescription = ({
           width: 100%;
           height: 24rem;
           perspective: 1000px;
+          overflow: visible;
+        }
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         .testimonial-image {
           position: absolute;

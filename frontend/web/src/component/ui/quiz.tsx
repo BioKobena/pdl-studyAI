@@ -323,9 +323,9 @@ export function Component() {
     const finalScore = calculateScore();
 
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="w-full max-w-4xl rounded-xl border border-slate-200 bg-white shadow-lg">
-          <div className="text-center p-8 border-b border-slate-200">
+      <div className="min-h-screen bg-slate-50 flex items-start justify-center p-6">
+        <div className="w-full max-w-5xl rounded-xl border border-slate-200 bg-white shadow-lg">
+          <div className="text-center p-2 border-b border-slate-200">
             <div className="mb-4 flex justify-center">
               <Trophy className="w-16 h-16 text-sky-600" />
             </div>
@@ -392,7 +392,7 @@ export function Component() {
   /* ---------- Quiz Screen ---------- */
   return (
     <div className="min-h-[calc(100vh-64px)] grid place-items-center bg-slate-50 px-4">
-      <div className="w-full max-w-3xl max-h-[calc(100vh-64px-2rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg flex flex-col">
+      <div className="w-full max-w-6xl h-100vh overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg flex flex-col">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <div className="text-sm text-slate-600">

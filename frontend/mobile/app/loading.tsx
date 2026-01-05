@@ -9,40 +9,149 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { extractPdfTextAxiosJson} from '@/api/pdfextractor';
+import { createSubject } from '@/api/subject';
+import { storage } from '@/api/storage/token';
+import { Alert } from 'react-native';
 
 const HomeScreen = () => {
     const router = useRouter();
+      const { fileUri, fileName, mimeType } = useLocalSearchParams<{
+            fileUri: string;
+            fileName: string;
+            mimeType?: string;
+        }>();
+
+    const [statusText, setStatusText] = useState("Initialisation...");
+    const abortRef = useRef<AbortController | null>(null);
+
     const [isProcessing, setIsProcessing] = useState(true);
     const progressAnim = useRef(new Animated.Value(0)).current;
+    const loopRef = useRef<Animated.CompositeAnimation | null>(null);
+    const createdIdRef = useRef<string>("");
+    const startProgressLoop = () => {
+    // On remet la valeur à 0
+    progressAnim.setValue(0);
 
-    useEffect(() => {
+    // Animation qui va de 0 -> 1 et qui recommence en boucle
+    loopRef.current = Animated.loop(
         Animated.timing(progressAnim, {
-            toValue: 1,
-            duration: 5000,
-            useNativeDriver: false,
-        }).start();
+        toValue: 1,
+        duration: 1400,       // vitesse de remplissage (ajuste)
+        useNativeDriver: false,
+        })
+    );
 
-        const timer = setTimeout(() => {
-            setIsProcessing(false);
-        }, 5000);
+    loopRef.current.start();
+    };
 
-        return () => clearTimeout(timer);
-    }, []);
+    const stopProgress = () => {
+    loopRef.current?.stop();
+    progressAnim.setValue(1); // optionnel : barre remplie à 100% à la fin
+    };
+
+ useEffect(() => {
+        let mounted = true;
+
+        //démarre l’animation "tant que traitement en cours"
+        startProgressLoop();
+
+        (async () => {
+            try {
+                setStatusText("Extraction du texte...");
+                    console.log("EXTRACT start", { fileUri, fileName, mimeType });
+                    
+                abortRef.current = new AbortController();
+
+                const text = await extractPdfTextAxiosJson({
+                        uri: fileUri,
+                        name: fileName,
+                        mimeType: mimeType ?? "application/pdf",
+                    });
+
+                    console.log("EXTRACT OK");
+                    console.log("text length:", text.length);
+                    console.log("text preview (first 500):", text.slice(0, 500));
+                    console.log("text preview (last 300):", text.slice(Math.max(0, text.length - 300)));
+
+                setStatusText("Création du sujet...");
+                const user = await storage.getUser<{ id: string }>();
+                if (!user?.id) throw new Error("User introuvable");
+
+                const created = await createSubject({
+                    userId: user.id,
+                    title: fileName,
+                    extractText: text,
+                });
+                //permet de garder la liste à jour dans le storage 
+                await storage.upsertCachedSubject(user.id, {
+                id: created.subject.id,
+                userId: created.subject.userId,
+                title: created.subject.title,
+                });
+
+                const subjectId = created?.subject?.id ?? created?.id;
+                if (!subjectId) throw new Error("subjectId non renvoyé par l’API subject");
+
+                createdIdRef.current = subjectId;
+                
+                console.log("CREATED SUBJECT =", created);
+                console.log("CREATED subject.userId =", created?.subject?.userId);
+                console.log("CURRENT userId =", user);
+
+                if (!mounted) return;
+
+                stopProgress();
+                setIsProcessing(false);
+
+                router.replace({
+                    pathname: "/choose",
+                    params: {
+                    subjectId,
+                    fileName,
+                    },
+                });
+        } catch (e: any) {
+
+            // si c’est une erreur axios, tu verras le body du serveur (super important)
+             console.log("ERROR RAW", e);
+                console.log("status:", e?.response?.status);
+                console.log("data:", e?.response?.data);
+
+                Alert.alert("Erreur", JSON.stringify(e?.response?.data ?? e?.message ));
+                    
+            stopProgress();
+            if (!mounted) return;
+           
+            Alert.alert("Erreur", e?.message ?? "Erreur extraction");
+            router.back();
+        }
+    })();
+
+    return () => {
+        mounted = false;
+        stopProgress(); //important pour éviter fuite mémoire
+        abortRef.current?.abort();
+    };
+    }, [fileUri, fileName, mimeType]);
+
 
     const progressWidth = progressAnim.interpolate({
         inputRange: [0, 1],
         outputRange: ['0%', '100%'],
     });
 
-    const handleCancel = () => {
-        router.back();
+   const handleCancel = () => {
+     abortRef.current?.abort();
+    router.back();  
     };
 
+
     const handleContinue = () => {
-        router.push('/choose');
+        router.push({pathname:'/choose'});
     };
 
     return (
@@ -53,7 +162,7 @@ const HomeScreen = () => {
                 <Text style={styles.title}>Fichier en cours de traitement</Text>
 
                 <Text style={styles.subtitle}>
-                    Veuillez patienter quelques secondes le temps de l'analyse.
+                    {statusText}
                 </Text>
 
                 <View style={styles.processingBox}>

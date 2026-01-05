@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,22 +6,43 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { resumeText } from '@/api/resume';
 
 const ResumeScreen = () => {
   const router = useRouter();
-  const [hasResume, setHasResume] = useState(false);
+  const { subjectId, fileName } = useLocalSearchParams<{ subjectId: string, fileName: string }>();
+  const [loading, setLoading] = useState(false);
+  const [resume, setResume] = useState<{ texteResume?: string } | null>(null);
 
-  const handleGenerateResume = () => {
-    setHasResume(true);
+  const handleGenerateResume = async () => {
+    if (!subjectId) {
+      Alert.alert("Erreur", "SubjectId Manquant");
+      return;
+    }
+    try {
+      setLoading(true);
+      const data = await resumeText(subjectId);
+      console.log("RESUME RAW =", JSON.stringify(data, null, 2));
+      const resumeObj = data?.resume ?? data;
+      console.log("RESUME OBJ =", JSON.stringify(resumeObj, null, 2));
+      setResume({ texteResume: resumeObj.texteResume ?? resumeObj.content ?? "" });
+    } catch (e: any) {
+      Alert.alert("Erreur", e?.message ?? "Erreur résumé");
+
+    } finally {
+      setLoading(false);
+    }
   };
 
+
   const handleStartChat = () => {
-    router.push('/(tabs)/chat');
+    router.push({ pathname: "/chat", params: { subjectId } });
   };
 
   return (
@@ -34,7 +55,7 @@ const ResumeScreen = () => {
       >
         <Text style={styles.title}>Résumé de votre cours</Text>
 
-        {!hasResume ? (
+        {!resume ? (
           <View style={styles.pdfContainer}>
             <View style={styles.pdfBox}>
               <Image
@@ -45,12 +66,15 @@ const ResumeScreen = () => {
             </View>
 
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, loading && { opacity: 0.6 }]}
               onPress={handleGenerateResume}
               activeOpacity={0.8}
+              disabled={loading}
             >
-              <Text style={styles.actionButtonText}>Générer mon résumé</Text>
-              <Ionicons name="sparkles" size={20} color="#fff" style={styles.buttonIcon} />
+              <Text style={styles.actionButtonText}>{loading ? "Génération.." : "Générer mon résumé"}</Text>
+              {!loading && (
+                <Ionicons name="sparkles" size={20} color="#fff" style={styles.buttonIcon} />
+              )}
             </TouchableOpacity>
           </View>
         ) : (
@@ -58,7 +82,7 @@ const ResumeScreen = () => {
             <View style={styles.summaryCard}>
               <View style={styles.subjectHeader}>
                 <Text style={styles.subjectLabel}>Sujet :</Text>
-                <Text style={styles.subjectText}>Application des graphes</Text>
+                <Text style={styles.subjectText}>{fileName}</Text>
               </View>
 
               <ScrollView
@@ -67,21 +91,7 @@ const ResumeScreen = () => {
                 showsVerticalScrollIndicator={true}
               >
                 <Text style={styles.summaryText}>
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours
-                  Révisions de cours Révisions de cours Révisions de cours Révisions de cours.
+                  {resume?.texteResume ?? "Résumé intoruvable "}
                 </Text>
               </ScrollView>
             </View>

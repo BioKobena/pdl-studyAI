@@ -139,6 +139,7 @@ function UploadFiles() {
         const text = await extractPdfTextFromFile(file);
 
         const key = crypto.randomUUID();
+        sessionStorage.removeItem("currentSubjectId");
         sessionStorage.setItem(`pdfText:${key}`, text);
         sessionStorage.setItem(`pdfName:${key}`, name);
         sessionStorage.setItem(`pdfBlobUrl:${key}`, blobUrl);
@@ -253,8 +254,8 @@ function UploadFiles() {
 
         <div className="flex justify-end ml-4">
           <InteractiveHoverButton
-            text="Commencer"
-            href="/dashboard/upload-success"
+            text="Dépose ton fichier"
+            href="#top"
           />
         </div>
       </main>

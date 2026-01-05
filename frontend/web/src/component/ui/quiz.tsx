@@ -114,6 +114,36 @@ async function loadQuizFromApi(subjectId: string): Promise<Question[]> {
   return transformBackendToFrontend(data.quiz);
 }
 
+export async function getQuiz(subjectId: string): Promise<Question[] | null> {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+  const token = localStorage.getItem("auth_token");
+  if (!token) throw new Error("No auth token found. Please log in first.");
+
+  try {
+    const res = await fetch(`${base}/api/subject/${subjectId}/quiz`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      if (res.status === 404) return null; // pas de quiz existant
+      throw new Error(`Erreur GET Quiz: ${res.status}`);
+    }
+
+    const data: QuizResponse = await res.json();
+    if (!data.quiz) return null;
+
+    return transformBackendToFrontend(data.quiz);
+  } catch (e) {
+    console.error("getQuiz error:", e);
+    return null;
+  }
+}
+
+
 /* ---------- UI Component ---------- */
 export function Component() {
   const params = useSearchParams();
@@ -293,9 +323,9 @@ export function Component() {
     const finalScore = calculateScore();
 
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="w-full max-w-4xl rounded-xl border border-slate-200 bg-white shadow-lg">
-          <div className="text-center p-8 border-b border-slate-200">
+      <div className="min-h-screen bg-slate-50 flex items-start justify-center p-6">
+        <div className="w-full max-w-5xl rounded-xl border border-slate-200 bg-white shadow-lg">
+          <div className="text-center p-2 border-b border-slate-200">
             <div className="mb-4 flex justify-center">
               <Trophy className="w-16 h-16 text-sky-600" />
             </div>
@@ -362,7 +392,7 @@ export function Component() {
   /* ---------- Quiz Screen ---------- */
   return (
     <div className="min-h-[calc(100vh-64px)] grid place-items-center bg-slate-50 px-4">
-      <div className="w-full max-w-3xl max-h-[calc(100vh-64px-2rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg flex flex-col">
+      <div className="w-full max-w-6xl h-100vh overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg flex flex-col">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <div className="text-sm text-slate-600">

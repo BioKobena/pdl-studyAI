@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -24,16 +25,30 @@ const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
 
   const router = useRouter();
 
   const handleLogin = async () => {
     if (!email || !password) return;
+
+  const start = Date.now();
+  const MIN = 700; //durée minimum visible
+
     try {
+        setLoading(true); // start loader
       await login(email, password)
       toast.show(
         { type: "success", text1: "Connexion réussie" });
-      setTimeout(() => router.replace("/home"), 400);
+            const elapsed = Date.now() - start;
+       const wait = Math.max(0, MIN - elapsed);
+     
+    setTimeout(() => {
+      router.replace("/home");
+      // pas besoin de setLoading(false) car l'écran se démonte
+    }, wait);
+
     } catch (e: unknown) {
       const msg =
         axios.isAxiosError(e)
@@ -41,6 +56,7 @@ const LoginScreen = () => {
           : "Erreur réseau/serveur";
 
       Alert.alert("Connexion impossible", msg);
+         setLoading(false); // stop loader si erreur
 
     }
 
@@ -53,6 +69,18 @@ const LoginScreen = () => {
   const handleHome = () => {
     router.push("/home")
   }
+
+      if (loading) {
+        return (
+          <SafeAreaView style={styles.container} edges={['top']}>
+            <StatusBar style="dark" />
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 12 }}>
+              <ActivityIndicator size="large" />
+              <Text style={{ color: "#666" }}>Connexion en cours…</Text>
+            </View>
+          </SafeAreaView>
+  );
+}
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style='dark' animated />
@@ -124,6 +152,7 @@ const LoginScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
+
 
     </SafeAreaView>
   );

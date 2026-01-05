@@ -6,14 +6,17 @@ import {
     StyleSheet,
     Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import LogoutButton from "@/components/ui/LogoutButton";
+
 
 const ChooseScreen = () => {
     const router = useRouter();
+     const insets =useSafeAreaInsets();
 
     const { subjectId,fileName } = useLocalSearchParams <{
         subjectId : string;
@@ -25,20 +28,23 @@ const ChooseScreen = () => {
     },[subjectId,fileName]);
 
     const handleGenerateQuiz = () => {
-        router.replace({pathname:"/(tabs)/quiz",params:{subjectId}});
+        router.replace({pathname:"/quiz",params:{subjectId}});
     };
 
     const handleChat = () => {
-        router.push({pathname:"/(tabs)/chat",params:{subjectId}});
+        router.push({pathname:"/chat",params:{subjectId}});
     };
 
     const handleGenerateSummary = () => {
-        router.push({pathname:"/(tabs)",params:{subjectId}});
+        router.push({pathname:"/summary",params:{subjectId,fileName}});
     };
 
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar style='dark' animated />
+            <View style={[styles.logoutWrap, { top: insets.top + 8 }]}>
+                    <LogoutButton variant="icon" />
+            </View>
 
             <View style={styles.backgroundPattern}>
                 {[...Array(20)].map((_, index) => (
@@ -265,6 +271,11 @@ const styles = StyleSheet.create({
         color: '#fff',
         letterSpacing: 0.3,
     },
+     logoutWrap: {
+  position: "absolute",
+  right: 16,
+  zIndex: 999,
+},
 });
 
 export default ChooseScreen;

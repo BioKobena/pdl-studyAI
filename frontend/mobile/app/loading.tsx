@@ -86,11 +86,21 @@ const HomeScreen = () => {
                     title: fileName,
                     extractText: text,
                 });
+                //permet de garder la liste à jour dans le storage 
+                await storage.upsertCachedSubject(user.id, {
+                id: created.subject.id,
+                userId: created.subject.userId,
+                title: created.subject.title,
+                });
 
                 const subjectId = created?.subject?.id ?? created?.id;
                 if (!subjectId) throw new Error("subjectId non renvoyé par l’API subject");
 
                 createdIdRef.current = subjectId;
+                
+                console.log("CREATED SUBJECT =", created);
+                console.log("CREATED subject.userId =", created?.subject?.userId);
+                console.log("CURRENT userId =", user);
 
                 if (!mounted) return;
 

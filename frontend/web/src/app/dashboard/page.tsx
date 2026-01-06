@@ -12,12 +12,12 @@ import {
 } from "@/component/ui/card-table";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/component/ui/table";
 import { Eye, Trash } from "lucide-react";
-import {Pagination, Upload} from "antd";
+import { Pagination, Upload } from "antd";
 import { getUserSubjectsById, UserSubject } from "@/lib/api/userSubjectById";
 import { getUser } from "@/lib/session";
 import { deleteSubject } from "@/lib/api/subject"; // <- ton API delete
 import { toast, Toaster } from "react-hot-toast";
-import {InteractiveHoverButton} from "@/component/ui/interactive-button";
+import { InteractiveHoverButton } from "@/component/ui/interactive-button";
 
 export default function DashboardPage() {
     const [subjects, setSubjects] = useState<UserSubject[]>([]);
@@ -134,7 +134,7 @@ export default function DashboardPage() {
         );
     };
 
-    if (loading) return <p>Chargement des documents...</p>;
+    if (loading) return <p className="items-center justify-center center">Chargement des documents...</p>;
 
     return (
         <div className="flex-1 p-6">

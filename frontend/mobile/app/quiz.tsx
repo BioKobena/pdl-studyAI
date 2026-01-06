@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState,useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,6 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Dimensions,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -30,36 +28,18 @@ interface Question {
   selectedAnswer?: string;
 }
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const isSmallScreen = SCREEN_WIDTH < 375;
-const isMediumScreen = SCREEN_WIDTH >= 375 && SCREEN_WIDTH < 768;
-const isLargeScreen = SCREEN_WIDTH >= 768;
-
-// Fonction pour adapter les tailles de police
-const scale = (size: number) => {
-  if (isSmallScreen) return size * 0.9;
-  if (isLargeScreen) return size * 1.1;
-  return size;
-};
-
-// Fonction pour adapter les espacements
-const verticalScale = (size: number) => {
-  if (isSmallScreen) return size * 0.85;
-  if (isLargeScreen) return size * 1.15;
-  return size;
-};
-
 const QuizScreen = () => {
   const router = useRouter();
-  const { subjectId } = useLocalSearchParams<{ subjectId: string }>();
+    const { subjectId } = useLocalSearchParams<{ subjectId: string }>();
 
   const [questions, setQuestions] = useState<UiQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(true);
 
-  /**Load quiz depuis l'API */
+  /**Load quiz depuis l’API */
   useEffect(() => {
     let alive = true;
 
@@ -111,7 +91,7 @@ const QuizScreen = () => {
       const nextIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
 
-      //remettre la sélection de la question suivante (si l'utilisateur revient plus tard)
+      //remettre la sélection de la question suivante (si l’utilisateur revient plus tard)
       setSelectedAnswer(questions[nextIndex]?.selectedAnswer ?? null);
     } else {
       setShowResults(true);
@@ -136,14 +116,16 @@ const QuizScreen = () => {
     });
     return correct;
   };
+  
 
-  if (loading) {
+
+if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <StatusBar style="dark" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2C94CB" />
-          <Text style={styles.loadingText}>Chargement du quiz…</Text>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 12 }}>
+          <ActivityIndicator size="large" />
+          <Text style={{ fontFamily: 'Kufam-SemiBold',color: "#666" }}>Chargement du quiz…</Text>
         </View>
       </SafeAreaView>
     );
@@ -153,10 +135,10 @@ const QuizScreen = () => {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <StatusBar style="dark" />
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>Aucune question</Text>
-          <Text style={styles.emptyText}>
-            Aucun quiz n'a été généré pour ce sujet.
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+          <Text style={{ fontFamily: "Kufam-Bold", color: "#2C94CB" }}>Aucune question</Text>
+          <Text style={{ color: "#666", marginTop: 8, textAlign: "center" }}>
+            Aucun quiz n’a été généré pour ce sujet.
           </Text>
         </View>
       </SafeAreaView>
@@ -180,11 +162,7 @@ const QuizScreen = () => {
           </View>
         </View>
 
-        <ScrollView 
-          style={styles.resultsScroll} 
-          contentContainerStyle={styles.resultsScrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView style={styles.resultsScroll} showsVerticalScrollIndicator={false}>
           {questions.map((q, index) => {
             const selectedAns = q.answers.find(a => a.id === q.selectedAnswer);
             const isCorrect = selectedAns?.isCorrect;
@@ -219,7 +197,7 @@ const QuizScreen = () => {
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={scale(24)} color="#000" />
+          <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>QUIZ</Text>
@@ -227,11 +205,7 @@ const QuizScreen = () => {
         </View>
       </View>
 
-      <ScrollView 
-        style={styles.content} 
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.quizInfo}>
           <Text style={styles.quizTitle}>QUIZZ CONCERNANT VOTRE DOCUMENT</Text>
           <Text style={styles.quizDescription}>
@@ -268,7 +242,7 @@ const QuizScreen = () => {
           ))}
 
           <TouchableOpacity
-            style={[styles.nextButton, !selectedAnswer && styles.nextButtonDisabled]}
+            style={[styles.nextButton, !selectedAnswer && { opacity: 0.4 }]}
             onPress={handleNextQuestion}
             activeOpacity={0.8}
             disabled={!selectedAnswer}
@@ -276,7 +250,7 @@ const QuizScreen = () => {
             <Text style={styles.nextButtonText}>
               {currentQuestionIndex === questions.length - 1 ? "Terminer" : "Prochaine question"}
             </Text>
-            <Ionicons name="arrow-forward" size={scale(20)} color="#2C94CB" />
+            <Ionicons name="arrow-forward" size={20} color="#2C94CB" />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -284,111 +258,73 @@ const QuizScreen = () => {
   );
 };
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: verticalScale(12),
-    paddingHorizontal: '5%',
-  },
-  loadingText: {
-    fontFamily: 'Kufam-SemiBold',
-    color: "#666",
-    fontSize: scale(14),
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: '10%',
-  },
-  emptyTitle: {
-    fontFamily: "Kufam-Bold",
-    color: "#2C94CB",
-    fontSize: scale(18),
-    marginBottom: verticalScale(8),
-  },
-  emptyText: {
-    color: "#666",
-    fontSize: scale(14),
-    textAlign: "center",
-    lineHeight: scale(20),
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: '5%',
-    paddingVertical: verticalScale(15),
+    paddingHorizontal: 15,
+    paddingVertical: 15,
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
-    justifyContent: "center",
-    minHeight: verticalScale(60),
+    justifyContent: "center"
   },
   backButton: {
-    position: 'absolute',
-    left: '5%',
-    padding: 8,
+    marginRight: 10,
   },
   headerContent: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "center"
   },
   headerTitle: {
-    fontSize: scale(14),
+    fontSize: 14,
     fontFamily: 'Kufam-Bold',
     color: '#000',
-    marginBottom: verticalScale(5),
+    marginBottom: 5,
   },
   headerSubtitle: {
-    fontSize: scale(12),
+    fontSize: 12,
     fontFamily: 'Kufam-Regular',
     color: '#666',
   },
   scoreText: {
-    fontSize: scale(14),
+    fontSize: 14,
     fontFamily: 'Kufam-Regular',
     color: '#000',
   },
   scoreValue: {
     fontFamily: 'Kufam-Bold',
     color: '#F9690E',
-    fontSize: scale(16),
+    fontSize: 16,
   },
   content: {
     flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: '5%',
-    paddingVertical: verticalScale(20),
-    paddingBottom: verticalScale(40),
+    padding: 20,
   },
   quizInfo: {
-    marginBottom: verticalScale(25),
+    marginBottom: 30,
   },
   quizTitle: {
-    fontSize: scale(16),
+    fontSize: 18,
     fontFamily: 'Kufam-Bold',
     color: '#2C94CB',
-    marginBottom: verticalScale(10),
-    lineHeight: scale(22),
+    marginBottom: 10,
   },
   quizDescription: {
-    fontSize: scale(13),
+    fontSize: 14,
     fontFamily: 'Kufam-Regular',
     color: '#666',
-    lineHeight: scale(20),
+    lineHeight: 20,
   },
   questionCard: {
     backgroundColor: '#fff',
-    borderRadius: verticalScale(15),
-    padding: '5%',
+    borderRadius: 15,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -397,45 +333,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
-    ...Platform.select({
-      android: {
-        borderWidth: 1,
-        borderColor: '#F0F0F0',
-      },
-    }),
   },
   questionLabel: {
-    fontSize: scale(13),
+    fontSize: 14,
     fontFamily: 'Kufam-SemiBold',
     color: '#2C94CB',
-    marginBottom: verticalScale(10),
+    marginBottom: 10,
   },
   questionText: {
-    fontSize: scale(15),
+    fontSize: 16,
     fontFamily: 'Kufam-SemiBold',
     color: '#000',
-    marginBottom: verticalScale(20),
-    lineHeight: scale(22),
+    marginBottom: 20,
+    lineHeight: 24,
   },
   answerButton: {
     backgroundColor: '#F5F5F5',
-    borderRadius: verticalScale(10),
-    padding: verticalScale(15),
-    marginBottom: verticalScale(12),
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 12,
     borderWidth: 2,
     borderColor: 'transparent',
-    minHeight: verticalScale(50),
-    justifyContent: 'center',
   },
   selectedAnswer: {
     backgroundColor: '#2C94CB',
     borderColor: '#2C94CB',
   },
   answerText: {
-    fontSize: scale(14),
+    fontSize: 15,
     fontFamily: 'Kufam-Regular',
     color: '#333',
-    lineHeight: scale(20),
   },
   selectedAnswerText: {
     color: '#fff',
@@ -445,31 +372,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: verticalScale(20),
+    marginTop: 20,
     gap: 8,
-    paddingVertical: verticalScale(10),
-  },
-  nextButtonDisabled: {
-    opacity: 0.4,
   },
   nextButtonText: {
-    fontSize: scale(15),
+    fontSize: 16,
     fontFamily: 'Kufam-SemiBold',
     color: '#2C94CB',
   },
   resultsScroll: {
     flex: 1,
-  },
-  resultsScrollContent: {
-    paddingHorizontal: '5%',
-    paddingVertical: verticalScale(20),
-    paddingBottom: verticalScale(40),
+    padding: 20,
   },
   resultCard: {
     backgroundColor: '#fff',
-    borderRadius: verticalScale(12),
-    padding: '5%',
-    marginBottom: verticalScale(15),
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -478,29 +397,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-    ...Platform.select({
-      android: {
-        borderWidth: 1,
-        borderColor: '#F0F0F0',
-      },
-    }),
   },
   resultQuestionLabel: {
-    fontSize: scale(12),
+    fontSize: 13,
     fontFamily: 'Kufam-SemiBold',
     color: '#2C94CB',
-    marginBottom: verticalScale(8),
+    marginBottom: 8,
   },
   resultQuestion: {
-    fontSize: scale(14),
+    fontSize: 15,
     fontFamily: 'Kufam-Regular',
     color: '#000',
-    marginBottom: verticalScale(12),
-    lineHeight: scale(20),
+    marginBottom: 12,
   },
   resultAnswer: {
-    borderRadius: verticalScale(8),
-    padding: verticalScale(12),
+    borderRadius: 8,
+    padding: 12,
   },
   correctAnswer: {
     backgroundColor: '#007260',
@@ -509,18 +421,41 @@ const styles = StyleSheet.create({
     backgroundColor: '#C62828',
   },
   resultAnswerText: {
-    fontSize: scale(13),
+    fontSize: 14,
     fontFamily: 'Kufam-SemiBold',
     color: '#fff',
-    lineHeight: scale(19),
+  },
+  feedbackSection: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  feedbackItem: {
+    marginBottom: 15,
+  },
+  feedbackLabel: {
+    fontSize: 15,
+    fontFamily: 'Kufam-Bold',
+    color: '#2C94CB',
+    marginBottom: 5,
+  },
+  feedbackLabelWeak: {
+    fontSize: 15,
+    fontFamily: 'Kufam-Bold',
+    color: '#C62828',
+    marginBottom: 5,
+  },
+  feedbackText: {
+    fontSize: 14,
+    fontFamily: 'Kufam-Regular',
+    color: '#666',
+    lineHeight: 20,
   },
   restartButton: {
     backgroundColor: '#F9690E',
-    borderRadius: verticalScale(10),
-    paddingVertical: verticalScale(16),
+    borderRadius: 8,
+    paddingVertical: 5,
     alignItems: 'center',
-    marginTop: verticalScale(10),
-    marginBottom: verticalScale(20),
+    marginBottom: 40,
     shadowColor: '#F9690E',
     shadowOffset: {
       width: 0,
@@ -531,7 +466,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   restartButtonText: {
-    fontSize: scale(16),
+    fontSize: 18,
     fontFamily: 'Kufam-Bold',
     color: '#fff',
   },

@@ -22,20 +22,29 @@ function UploadSuccess() {
   const [creatingSubject, setCreatingSubject] = useState(false);
   const [subjectId, setSubjectId] = useState<string>("");
 
-  // ✅ anti double call (dev/StrictMode)
+  // anti double call (dev/StrictMode)
   const createOnceRef = useRef(false);
+  const [isFromDashboard, setIsFromDashboard] = useState(false);
+
+
 
   // -------------------------------------------------------
   // 1) Charger le PDF depuis sessionStorage (TOUJOURS)
   // -------------------------------------------------------
   useEffect(() => {
+    const currentSubjectId = sessionStorage.getItem("currentSubjectId");
+    const currentPdfName = sessionStorage.getItem("currentPdfName") || "";
+    const fromDashboard = !!currentSubjectId && !key;
+    setIsFromDashboard(fromDashboard)
     if (!key) return;
 
     const name = sessionStorage.getItem(`pdfName:${key}`) || "";
     const blobUrl = sessionStorage.getItem(`pdfBlobUrl:${key}`) || "";
     const text = sessionStorage.getItem(`pdfText:${key}`) || "";
     const metaRaw = sessionStorage.getItem(`pdfMeta:${key}`);
-
+    if(fromDashboard){
+      setSessName(currentPdfName)
+    }
     setSessName(name);
     setSessText(text);
 
@@ -54,15 +63,21 @@ function UploadSuccess() {
     if (existingSubjectId) {
       setSubjectId(existingSubjectId);
 
-      // ✅ mode "1 seul PDF actif"
+      // mode "1 seul PDF actif"
       sessionStorage.setItem("activeSubjectId", existingSubjectId);
-      sessionStorage.setItem("activePdfName", name || "Document"); // optionnel
+      sessionStorage.setItem("activePdfName", name || "Document");
     }
 
     return () => {
       if (blobUrl) URL.revokeObjectURL(blobUrl);
+        // Ceci s'exécute quand on quitte le composant
+        sessionStorage.removeItem("currentSubjectId");
+        sessionStorage.removeItem("currentPdfName");
     };
   }, [key]);
+  const message = useMemo(() => {
+    return isFromDashboard ? "Fichier récupéré avec succès" : "Fichier extrait avec succès";
+  }, [isFromDashboard]);
 
   const hasText = useMemo(() => sessText.trim().length > 0, [sessText]);
 
@@ -88,7 +103,7 @@ function UploadSuccess() {
     // déjà en mémoire ?
     const cached = sessionStorage.getItem(`subjectId:${key}`);
     if (cached) {
-      // ✅ garantir activeSubjectId même si déjà créé
+      // garantir activeSubjectId même si déjà créé
       sessionStorage.setItem("activeSubjectId", cached);
       sessionStorage.setItem("activePdfName", sessName || "Document"); // optionnel
       return cached;
@@ -222,17 +237,17 @@ function UploadSuccess() {
             )}
           </div>
         </div>
-
-        {hasText ? (
-          <div className="mb-6 inline-flex flex-wrap items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
-            <span>✓PDF analysé</span>
-            <span>• {(meta?.chars ?? sessText.length).toLocaleString()} caractères</span>
-          </div>
+        {hasText || isFromDashboard ? (
+            <div className="mb-6 inline-flex flex-wrap items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
+              <span>{isFromDashboard ? "✓Fichier récupéré" : "✓PDF analysé"}</span>
+              {!isFromDashboard && <span>• {(meta?.chars ?? sessText.length).toLocaleString()} caractères</span>}
+            </div>
         ) : (
-          <div className="mb-6 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-            Aucun texte extrait — ce PDF semble être un scan.
-          </div>
+            <div className="mb-6 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+              Aucun texte extrait — ce PDF semble être un scan.
+            </div>
         )}
+
 
         <div className="flex flex-col items-center justify-center space-y-6">
           <h2 className="text-2xl text-gray-700">

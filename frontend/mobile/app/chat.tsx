@@ -9,11 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ScrollView,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter} from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { storage } from '@/api/storage/token';
 import { sendChatMessageMobile } from '@/api/chat';
 
@@ -24,22 +26,47 @@ interface Message {
   timestamp: Date;
 }
 
-const ChatScreen = () => {  
-  const router=useRouter();
-  
+const INITIAL_SUGGESTIONS = [
+  "Explique-moi les points clés",
+  "Résume ce document",
+  "Quelles sont les idées principales ?",
+  "Donne-moi des exemples",
+];
+
+const FOLLOW_UP_SUGGESTIONS = [
+  "Peux-tu développer ?",
+  "Donne-moi plus de détails",
+  "Explique autrement",
+  "C'est quoi la conclusion ?",
+];
+
+const ChatScreen = () => {
   const {subjectId} = useLocalSearchParams<{subjectId:string}>();
   const [sending, setSending]=useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     flatListRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
-  const handleSend = async() => {
-    const text = inputText.trim();
-    if(!text || sending) return;
+  const getCurrentSuggestions = () => {
+    return messages.length === 0 ? INITIAL_SUGGESTIONS : FOLLOW_UP_SUGGESTIONS;
+  };
+
+  const handleSuggestionPress = (suggestion: string) => {
+    setInputText(suggestion);
+    // Envoyer directement le message après un court délai
+    setTimeout(() => {
+      handleSendWithText(suggestion);
+    }, 100);
+  };
+
+  const handleSendWithText = async(text: string) => {
+    const trimmedText = text.trim();
+    if(!trimmedText || sending) return;
 
     if(!subjectId){
       Alert.alert("Erreur","subjectid Manquant. Reviens à l'étape précédante.");
@@ -48,7 +75,7 @@ const ChatScreen = () => {
     //ajoute le message de l'utilisateur 
     const userMsg:Message={
       id: Date.now().toString(),
-      text,
+      text: trimmedText,
       isUser:true,
       timestamp:new Date(),
     };    
@@ -73,7 +100,7 @@ const ChatScreen = () => {
       const res = await sendChatMessageMobile({
         userId:user.id,
         subjectId,
-        message:text,
+        message:trimmedText,
 
       });
 
@@ -87,13 +114,19 @@ const ChatScreen = () => {
       const msg = e?.message ?? "Erreur IA";
             setMessages(prev=>
               prev.map(m=>
-                (m.id ===botId? {...m, text:"Erreur: ${String(msg)}"}
+                (m.id ===botId? {...m, text:`Erreur: ${String(msg)}`}
               :m)
             ));
  
     }finally{
       setSending(false);
     }
+  };
+
+  const handleSend = async() => {
+    const text = inputText.trim();
+    if(!text || sending) return;
+    await handleSendWithText(text);
   };
 
   const renderMessage = ({ item }: { item: Message }) => (
@@ -119,6 +152,7 @@ const ChatScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style="dark" />
+
       <View style={styles.backgroundPattern}>
         {[...Array(20)].map((_, index) => (
           <View
@@ -134,19 +168,15 @@ const ChatScreen = () => {
           />
         ))}
       </View>
-      <View style={styles.header}>
-             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                      <Ionicons name="arrow-back" size={24} color="#000" />
-                    </TouchableOpacity>
 
-        <View style={{ flex: 6}} />
+      <View style={styles.header}>
         <Text style={styles.headerTitle}>studyAI chat</Text>
       </View>
 
       <KeyboardAvoidingView
         style={styles.chatContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={100}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <FlatList
           ref={flatListRef}
@@ -155,7 +185,32 @@ const ChatScreen = () => {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.messagesList}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         />
+
+        {/* Suggestions au-dessus de l'input */}
+        {isInputFocused && (
+          <View style={styles.suggestionsContainer}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.suggestionsScroll}
+              keyboardShouldPersistTaps="handled"
+            >
+              {getCurrentSuggestions().map((suggestion, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.suggestionChip}
+                  onPress={() => handleSuggestionPress(suggestion)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="bulb-outline" size={16} color="#2C94CB" />
+                  <Text style={styles.suggestionText}>{suggestion}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         <View style={styles.inputContainer}>
           <TextInput
@@ -164,15 +219,26 @@ const ChatScreen = () => {
             placeholderTextColor="#999"
             value={inputText}
             onChangeText={setInputText}
+            onFocus={() => setIsInputFocused(true)}
+            onBlur={() => setTimeout(() => setIsInputFocused(false), 200)}
             multiline
             maxLength={500}
           />
           <TouchableOpacity
-            style={styles.sendButton}
+            style={[styles.sendButton, (!inputText.trim() || sending) && styles.sendButtonDisabled]}
             onPress={handleSend}
             activeOpacity={0.7}
+            disabled={!inputText.trim() || sending}
           >
-            <Ionicons name="send" size={22} color="#2C94CB" />
+            {sending ? (
+              <Ionicons name="hourglass-outline" size={22} color="#999" />
+            ) : (
+              <Ionicons 
+                name="send" 
+                size={22} 
+                color={inputText.trim() ? "#2C94CB" : "#999"} 
+              />
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -192,10 +258,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
   },
-    backButton: {
-     alignItems: "flex-start", padding: 8,flex:1,
-
-   },
   circle: {
     position: 'absolute',
     width: 40,
@@ -204,26 +266,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0',
   },
   header: {
+    paddingVertical: 15,
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
     backgroundColor: '#fff',
-    flexDirection: "row",
-      textAlign: "center",
-      
-        width: "100%",
-        marginTop: "-3%", 
   },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Kufam-Bold',
     color: '#2C94CB',
-    textAlign: "center",
-        flexDirection: "row",
-        alignItems: "center",
-        width: "100%",
-        marginTop: "-3%", 
-        
   },
   chatContainer: {
     flex: 1,
@@ -265,6 +317,40 @@ const styles = StyleSheet.create({
   userMessageText: {
     color: '#fff',
   },
+  suggestionsContainer: {
+    backgroundColor: '#F8F9FA',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    paddingVertical: 12,
+  },
+  suggestionsScroll: {
+    paddingHorizontal: 15,
+    gap: 10,
+  },
+  suggestionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#2C94CB',
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  suggestionText: {
+    fontSize: 14,
+    fontFamily: 'Kufam-Medium',
+    color: '#2C94CB',
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -296,6 +382,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 2,
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#F0F0F0',
   },
 });
 

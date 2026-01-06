@@ -7,12 +7,38 @@ import {
   ScrollView,
   Image,
   Alert,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { resumeText } from '@/api/resume';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallScreen = SCREEN_WIDTH < 375;
+const isMediumScreen = SCREEN_WIDTH >= 375 && SCREEN_WIDTH < 768;
+const isLargeScreen = SCREEN_WIDTH >= 768;
+
+// Fonction pour adapter les tailles de police
+const scale = (size: number) => {
+  if (isSmallScreen) return size * 0.9;
+  if (isLargeScreen) return size * 1.1;
+  return size;
+};
+
+// Fonction pour adapter les espacements
+const verticalScale = (size: number) => {
+  if (isSmallScreen) return size * 0.85;
+  if (isLargeScreen) return size * 1.15;
+  return size;
+};
+
+// Fonction pour adapter les dimensions
+const moderateScale = (size: number, factor = 0.5) => {
+  return size + (scale(size) - size) * factor;
+};
 
 const ResumeScreen = () => {
   const router = useRouter();
@@ -34,12 +60,10 @@ const ResumeScreen = () => {
       setResume({ texteResume: resumeObj.texteResume ?? resumeObj.content ?? "" });
     } catch (e: any) {
       Alert.alert("Erreur", e?.message ?? "Erreur résumé");
-
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleStartChat = () => {
     router.push({ pathname: "/chat", params: { subjectId } });
@@ -49,23 +73,21 @@ const ResumeScreen = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style="dark" />
 
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={scale(25)} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Résumé de votre cours</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-      <View style={styles.container1}>
-                        <TouchableOpacity
-                            style={styles.backButton}
-                            onPress={() => router.back()}
-                        >
-                            <Ionicons name="arrow-back" size={25} color="#000" />
-                        </TouchableOpacity>
-                        <Text style={ styles.title}>Resumé de votre cours</Text>
-                        <View style={{ flex: 1
-                         }} />
-                    </View>
-      
-
         {!resume ? (
           <View style={styles.pdfContainer}>
             <View style={styles.pdfBox}>
@@ -77,14 +99,16 @@ const ResumeScreen = () => {
             </View>
 
             <TouchableOpacity
-              style={[styles.actionButton, loading && { opacity: 0.6 }]}
+              style={[styles.actionButton, loading && styles.actionButtonDisabled]}
               onPress={handleGenerateResume}
               activeOpacity={0.8}
               disabled={loading}
             >
-              <Text style={styles.actionButtonText}>{loading ? "Génération.." : "Générer mon résumé"}</Text>
+              <Text style={styles.actionButtonText}>
+                {loading ? "Génération..." : "Générer mon résumé"}
+              </Text>
               {!loading && (
-                <Ionicons name="sparkles" size={20} color="#fff" style={styles.buttonIcon} />
+                <Ionicons name="sparkles" size={scale(20)} color="#fff" style={styles.buttonIcon} />
               )}
             </TouchableOpacity>
           </View>
@@ -93,7 +117,9 @@ const ResumeScreen = () => {
             <View style={styles.summaryCard}>
               <View style={styles.subjectHeader}>
                 <Text style={styles.subjectLabel}>Sujet :</Text>
-                <Text style={styles.subjectText}>{fileName}</Text>
+                <Text style={styles.subjectText} numberOfLines={2}>
+                  {fileName || "Document"}
+                </Text>
               </View>
 
               <ScrollView
@@ -102,7 +128,7 @@ const ResumeScreen = () => {
                 showsVerticalScrollIndicator={true}
               >
                 <Text style={styles.summaryText}>
-                  {resume?.texteResume ?? "Résumé intoruvable "}
+                  {resume?.texteResume || "Résumé introuvable"}
                 </Text>
               </ScrollView>
             </View>
@@ -113,6 +139,7 @@ const ResumeScreen = () => {
               activeOpacity={0.8}
             >
               <Text style={styles.actionButtonText}>Commencer un chat</Text>
+              <Ionicons name="chatbubbles" size={scale(20)} color="#fff" style={styles.buttonIcon} />
             </TouchableOpacity>
           </View>
         )}
@@ -126,59 +153,73 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  container1:{
-   flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    marginTop: "-3%", 
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: '5%',
+    paddingVertical: verticalScale(15),
+    borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
     backgroundColor: '#fff',
-        
+    minHeight: verticalScale(60),
   },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 100,
+  backButton: {
+    padding: 8,
+    marginRight: 8,
   },
   title: {
-    fontSize: 24,
+    flex: 1,
+    fontSize: scale(18),
     fontFamily: 'Kufam-Bold',
     color: '#2C94CB',
     textAlign: 'center',
+    paddingHorizontal: 10,
+  },
+  headerSpacer: {
+    width: scale(25) + 16, // Taille du bouton retour pour centrer le titre
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: '5%',
+    paddingTop: verticalScale(20),
+    paddingBottom: verticalScale(40),
   },
   pdfContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 50,
+    paddingVertical: verticalScale(30),
+    minHeight: SCREEN_HEIGHT * 0.6,
   },
   pdfBox: {
-    width: 280,
-    height: 360,
+    width: SCREEN_WIDTH * 0.7,
+    maxWidth: 280,
+    height: SCREEN_HEIGHT * 0.4,
+    maxHeight: 360,
     backgroundColor: '#E3F2FD',
-    borderRadius: 15,
+    borderRadius: verticalScale(15),
     borderWidth: 2,
     borderColor: '#2C94CB',
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: verticalScale(40),
   },
   pdfImage: {
-    width: 150,
-    height: 150,
+    width: moderateScale(120),
+    height: moderateScale(120),
   },
   contentContainer: {
     flex: 1,
+    paddingBottom: verticalScale(20),
   },
   summaryCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: verticalScale(12),
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    padding: 20,
-    marginBottom: 30,
+    padding: '5%',
+    marginBottom: verticalScale(25),
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -187,41 +228,49 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
-    maxHeight: 550,
+    maxHeight: SCREEN_HEIGHT * 0.65,
+    ...Platform.select({
+      android: {
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+      },
+    }),
   },
   subjectHeader: {
     flexDirection: 'row',
-    marginBottom: 15,
-    paddingBottom: 15,
+    marginBottom: verticalScale(15),
+    paddingBottom: verticalScale(15),
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
+    alignItems: 'flex-start',
   },
   subjectLabel: {
-    fontSize: 16,
+    fontSize: scale(15),
     fontFamily: 'Kufam-Bold',
     color: '#000',
     marginRight: 8,
   },
   subjectText: {
-    fontSize: 16,
+    fontSize: scale(15),
     fontFamily: 'Kufam-Regular',
     color: '#333',
     flex: 1,
+    lineHeight: scale(21),
   },
   summaryContent: {
-    maxHeight: 450,
+    flex: 1,
   },
   summaryText: {
-    fontSize: 14,
+    fontSize: scale(14),
     fontFamily: 'Kufam-Regular',
-    color: '#797575ff',
-    lineHeight: 22,
+    color: '#666',
+    lineHeight: scale(22),
   },
   actionButton: {
     backgroundColor: '#F9690E',
-    borderRadius: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
+    borderRadius: verticalScale(10),
+    paddingVertical: verticalScale(16),
+    paddingHorizontal: '8%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -233,19 +282,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+    minHeight: verticalScale(55),
+  },
+  actionButtonDisabled: {
+    opacity: 0.6,
   },
   buttonIcon: {
     marginLeft: 8,
   },
   actionButtonText: {
-    fontSize: 18,
+    fontSize: scale(16),
     fontFamily: 'Kufam-Bold',
     color: '#fff',
     letterSpacing: 0.3,
-  },  backButton: {
-        flex: 1, alignItems: "flex-start", padding: 8
-    },
-  
+  },
 });
 
 export default ResumeScreen;

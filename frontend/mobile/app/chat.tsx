@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter} from 'expo-router';
 import { storage } from '@/api/storage/token';
 import { sendChatMessageMobile } from '@/api/chat';
 
@@ -24,7 +24,9 @@ interface Message {
   timestamp: Date;
 }
 
-const ChatScreen = () => {
+const ChatScreen = () => {  
+  const router=useRouter();
+  
   const {subjectId} = useLocalSearchParams<{subjectId:string}>();
   const [sending, setSending]=useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -117,7 +119,6 @@ const ChatScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style="dark" />
-
       <View style={styles.backgroundPattern}>
         {[...Array(20)].map((_, index) => (
           <View
@@ -133,8 +134,12 @@ const ChatScreen = () => {
           />
         ))}
       </View>
-
       <View style={styles.header}>
+             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                      <Ionicons name="arrow-back" size={24} color="#000" />
+                    </TouchableOpacity>
+
+        <View style={{ flex: 6}} />
         <Text style={styles.headerTitle}>studyAI chat</Text>
       </View>
 
@@ -187,6 +192,10 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
   },
+    backButton: {
+     alignItems: "flex-start", padding: 8,flex:1,
+
+   },
   circle: {
     position: 'absolute',
     width: 40,
@@ -195,16 +204,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0',
   },
   header: {
-    paddingVertical: 15,
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
     backgroundColor: '#fff',
+    flexDirection: "row",
+      textAlign: "center",
+      
+        width: "100%",
+        marginTop: "-3%", 
   },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Kufam-Bold',
     color: '#2C94CB',
+    textAlign: "center",
+        flexDirection: "row",
+        alignItems: "center",
+        width: "100%",
+        marginTop: "-3%", 
+        
   },
   chatContainer: {
     flex: 1,

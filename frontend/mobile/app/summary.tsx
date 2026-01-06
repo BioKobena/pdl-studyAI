@@ -53,7 +53,18 @@ const ResumeScreen = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Résumé de votre cours</Text>
+      <View style={styles.container1}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => router.back()}
+                        >
+                            <Ionicons name="arrow-back" size={25} color="#000" />
+                        </TouchableOpacity>
+                        <Text style={ styles.title}>Resumé de votre cours</Text>
+                        <View style={{ flex: 1
+                         }} />
+                    </View>
+      
 
         {!resume ? (
           <View style={styles.pdfContainer}>
@@ -115,6 +126,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  container1:{
+   flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    marginTop: "-3%", 
+    borderBottomColor: '#F0F0F0',
+    backgroundColor: '#fff',
+        
+  },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -125,7 +145,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: 'Kufam-Bold',
     color: '#2C94CB',
-    marginBottom: 30,
     textAlign: 'center',
   },
   pdfContainer: {
@@ -223,7 +242,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Kufam-Bold',
     color: '#fff',
     letterSpacing: 0.3,
-  },
+  },  backButton: {
+        flex: 1, alignItems: "flex-start", padding: 8
+    },
+  
 });
 
 export default ResumeScreen;

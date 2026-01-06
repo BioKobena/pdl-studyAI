@@ -157,7 +157,7 @@ const HomeScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar style='dark' animated />
-
+            
             <View style={styles.content}>
                 <Text style={styles.title}>Fichier en cours de traitement</Text>
 

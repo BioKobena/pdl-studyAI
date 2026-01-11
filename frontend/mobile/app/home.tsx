@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState,useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,27 +8,99 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
+import { storage } from '@/api/storage/token';
+import { deleteSubject, listeSubjectUser } from '@/api/subject';
+import { useFocusEffect } from '@react-navigation/native';
+import LogoutButton from "@/components/ui/LogoutButton";
+
 
 interface UploadedFile {
   id: string;
+  subjectId?: string;
   name: string;
   size: string;
-  status: 'success' | 'error';
+  status: "success" | "error" | "pending";
   uri?: string;
 }
 
 const UploadScreen = () => {
   const router = useRouter();
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([
-    { id: '1', name: 'cours_base_de_donnees.pdf', size: '18 Mo', status: 'success' },
-    { id: '2', name: 'cours_base_de_donnees.pdf', size: '18 Mo', status: 'error' },
-    { id: '3', name: 'cours_base_de_donnees.pdf', size: '18 Mo', status: 'success' },
-    { id: '4', name: 'cours_base_de_donnees.pdf', size: '18 Mo', status: 'success' },
-  ]);
+  const insets = useSafeAreaInsets();
+
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+  useEffect(() => {
+    let alive = true;
+      
+    (async () => {
+      try {
+        setLoadingSubjects(true);
+
+        const user = await storage.getUser<{ id: string }>();
+        if (!user?.id) throw new Error("Utilisateur non trouvé");
+        
+
+          // 1) afficher cache immédiatement (si dispo)
+          const cached = await storage.getCachedSubjects(user?.id);
+          if (cached.length > 0) {
+            setUploadedFiles(prev => {
+              // on garde aussi les fichiers "pending" (pickés mais pas encore créés)
+              const pending = prev.filter(f => f.status === "pending");
+              const cachedMapped: UploadedFile[] = cached.map(s => ({
+                id: s.id,
+                subjectId: s.id,         // rai subjectId
+                name: s.title,
+                size: "-",
+                status: "success",
+              }));
+              return [...pending, ...cachedMapped];
+            });
+          }
+
+        const subjects = await listeSubjectUser(user.id);
+
+        // Si l’API renvoie vide, on n’écrase pas ce qu’on a (cache/pending)
+      if (!Array.isArray(subjects) || subjects.length === 0) return;
+
+      const apiMapped: UploadedFile[] = subjects.map(s => ({
+        id: s.id,
+        subjectId: s.id,            // vrai subjectId
+        name: s.title,
+        size: "-",
+        status: "success",
+      }));
+
+      setUploadedFiles(prev => {
+        const pending = prev.filter(f => f.status === "pending");
+        return [...pending, ...apiMapped];
+      });
+
+      // 3) update cache
+      await storage.setCachedSubjects(
+        user?.id,
+        subjects.map(s => ({ id: s.id, userId: s.userId, title: s.title }))
+      );
+      } catch (e: any) {
+      if (!alive) return;
+      Alert.alert("Erreur", e?.message ?? "Impossible de charger les fichiers");``
+      }
+      finally {
+        if (!alive) return;
+        setLoadingSubjects(false);
+      }
+    })();
+    
+    console.log("uploadedFiles state =", uploadedFiles.length);
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
 
   const pickDocument = async () => {
@@ -49,13 +121,14 @@ const UploadScreen = () => {
 
         const newFile: UploadedFile = {
           id: Date.now().toString(),
+          subjectId:undefined,
           name: file.name,
           size: `${fileSizeMB} Mo`,
-          status: 'success',
+          status: 'pending',
           uri: file.uri,
         };
 
-        setUploadedFiles([newFile, ...uploadedFiles]);
+        setUploadedFiles(prev=>[newFile, ...prev]);
         setSelectedFile(newFile);
         
         router.push({
@@ -73,7 +146,7 @@ const UploadScreen = () => {
     }
   };
 
-  const removeFile = (id: string) => {
+  const removeFile = (file: UploadedFile) => {
     Alert.alert(
       'Supprimer le fichier',
       'Êtes-vous sûr de vouloir supprimer ce fichier ?',
@@ -82,10 +155,29 @@ const UploadScreen = () => {
         {
           text: 'Supprimer',
           style: 'destructive',
-          onPress: () => {
-            setUploadedFiles(uploadedFiles.filter(file => file.id !== id));
-            if (selectedFile?.id === id) {
+          onPress: async () => {
+            try{
+              
+              const subjectId = file.subjectId ?? file.id;
+              await deleteSubject(subjectId); 
+
+            // update UI
+            setUploadedFiles(prev => prev.filter(f => (f.subjectId ?? f.id) !== subjectId));
+            if ((selectedFile?.subjectId ?? selectedFile?.id) === subjectId) {
               setSelectedFile(null);
+            }
+
+            // update cache
+            const userId = await storage.getUserId?.(); // si tu l’as
+            if (userId) {
+              const cached = await storage.getCachedSubjects(userId);
+              await storage.setCachedSubjects(userId, cached.filter(s => s.id !== subjectId));
+            }
+         
+            
+           
+            }catch{
+                Alert.alert("Impossible de supprimer le fichier")
             }
           },
         },
@@ -96,6 +188,18 @@ const UploadScreen = () => {
   const handleFileSelect = (file: UploadedFile) => {
     if (file.status === 'success') {
       setSelectedFile(file);
+        //si c'est un ancien subject (pas d'uri), on va direct à Choose
+        if (!file.uri) {
+          router.push({
+            pathname: "/choose",
+            params: {
+              subjectId: file.id,     // ici id = subjectId
+              fileName: file.name,
+            },
+          });
+          return;
+        }
+
       router.push({
         pathname: "/loading",
         params: {
@@ -112,6 +216,9 @@ const UploadScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style='dark' animated />
+      <View style={[styles.logoutWrap, { top: insets.top + 8 }]}>
+        <LogoutButton variant="icon" />
+      </View>
 
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
@@ -137,6 +244,9 @@ const UploadScreen = () => {
 
         <View style={styles.filesSection}>
           <Text style={styles.filesSectionTitle}>Fichiers récemment téléchargés</Text>
+          {loadingSubjects && (
+            <Text style={{ color: "#666",    fontFamily: 'Kufam-SemiBold', marginBottom: 10 }}>Chargement…</Text>
+          )}
 
           {uploadedFiles.map((file) => (
             <TouchableOpacity
@@ -162,7 +272,7 @@ const UploadScreen = () => {
               <View style={styles.fileRight}>
                 <Text style={styles.fileSize}>{file.size}</Text>
                 <TouchableOpacity 
-                  onPress={() => removeFile(file.id)}
+                  onPress={() => removeFile(file)}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Ionicons name="trash-outline" size={20} color="#999" />
@@ -283,6 +393,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Kufam-Regular',
     color: '#F9690E',
   },
+  logoutWrap: {
+  position: "absolute",
+  right: 16,
+  zIndex: 999,
+},
+
 });
 
 export default UploadScreen;

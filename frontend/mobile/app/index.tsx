@@ -20,7 +20,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
     setTimeout(() => {
       router.push("/(auth)")
-    }, 2000);
+  }, 2000);
 
 
   return (

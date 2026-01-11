@@ -2,7 +2,6 @@
 
 import React from "react";
 import { motion, Transition } from "framer-motion";
-import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
@@ -64,7 +63,6 @@ export const InteractiveHoverButton = React.forwardRef<
       {/* Foreground Text */}
       <span className="relative z-10 flex items-center gap-2 transition-all duration-300 group-hover:translate-x-1">
         {text}
-        <ArrowRight className="h-4 w-4" />
       </span>
     </button>
   );

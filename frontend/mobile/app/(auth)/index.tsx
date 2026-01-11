@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -6,11 +6,13 @@ import {
     StyleSheet,
     StatusBar,
     SafeAreaView,
+    ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import { logoStyle } from '@/styles/logo';
 import { useRouter } from 'expo-router';
+import { storage } from '@/api/storage/token';
 
 interface AuthIndexScreenProps {
     navigation?: any;
@@ -20,14 +22,37 @@ const AuthIndexScreen: React.FC<AuthIndexScreenProps> = () => {
     const animationRef = useRef<LottieView>(null);
 
     const router = useRouter();
-
+    const [checking,setChecking]=useState(true);
     useEffect(() => {
-        animationRef.current?.play();
-    }, []);
+        // Vérifie si une session existe (token + user + exp si possible)
+        (async () => {
+        try {
+            const res = await storage.verifySession();
+            if (res.ok) {
+            // utilisateur encore connecté -> redirige vers Upload (/home)
+            router.replace('/home');
+            return;
+            }
+        } finally {
+            setChecking(false);
+        }
+        })();
+  }, []);
+
 
     const handleLogin = () => {
         router.push("/(auth)/login")
     }
+
+      if (checking) {
+            return (
+            <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+                <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+                <ActivityIndicator size="large" />
+                <Text style={{ marginTop: 10, color: "#666" }}>Vérification de session…</Text>
+            </View>
+            );
+        }
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#fff" />

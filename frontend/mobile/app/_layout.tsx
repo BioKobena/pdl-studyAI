@@ -5,9 +5,10 @@ import { useFonts } from 'expo-font';
 import 'react-native-reanimated';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: '',
 };
 
 export default function RootLayout() {
@@ -21,12 +22,19 @@ export default function RootLayout() {
   });
 
   const colorScheme = useColorScheme();
+  const stackOptionStyle: NativeStackNavigationOptions = {
+    headerShown: false
+  }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="index" options={stackOptionStyle} />
+      <Stack.Screen name="home" options={stackOptionStyle} />
+      <Stack.Screen name="choose" options={stackOptionStyle} />
       <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="chat" options={stackOptionStyle} />
+      <Stack.Screen name="quiz" options={stackOptionStyle} />
+      <Stack.Screen name="summary" options={stackOptionStyle} />
     </Stack>
   );
 }

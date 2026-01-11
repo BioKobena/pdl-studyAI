@@ -125,7 +125,7 @@ if (loading) {
         <StatusBar style="dark" />
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 12 }}>
           <ActivityIndicator size="large" />
-          <Text style={{ color: "#666" }}>Chargement du quiz…</Text>
+          <Text style={{ fontFamily: 'Kufam-SemiBold',color: "#666" }}>Chargement du quiz…</Text>
         </View>
       </SafeAreaView>
     );
